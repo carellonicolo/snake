@@ -8,7 +8,7 @@ import { GameCanvas } from '@/components/game/GameCanvas';
 import { GameUI } from '@/components/game/GameUI';
 import { Leaderboard } from '@/components/game/Leaderboard';
 import { UserStats } from '@/components/game/UserStats';
-import { Difficulty, Theme, GameConfig } from '@/types/game';
+import { Difficulty, Theme, GameConfig, GameMode } from '@/types/game';
 import { LogOut, User, Trophy, BarChart3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -19,6 +19,7 @@ export default function Game() {
 
   const [theme, setTheme] = useState<Theme>('nokia');
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
+  const [gameMode, setGameMode] = useState<GameMode>('classic');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [activeTab, setActiveTab] = useState<'game' | 'leaderboard' | 'stats'>('game');
   const [username, setUsername] = useState<string>('');
@@ -29,6 +30,7 @@ export default function Game() {
     baseSpeed: 100,
     difficulty,
     theme,
+    mode: gameMode,
   };
 
   const { state, startGame, pauseGame, resetGame, gridSize, cellSize } = useGameEngine(config);
@@ -231,6 +233,7 @@ export default function Game() {
                 state={state}
                 theme={theme}
                 difficulty={difficulty}
+                gameMode={gameMode}
                 soundEnabled={soundEnabled}
                 onStart={startGame}
                 onPause={pauseGame}
@@ -238,6 +241,7 @@ export default function Game() {
                 onToggleSound={() => setSoundEnabled(!soundEnabled)}
                 onThemeChange={setTheme}
                 onDifficultyChange={setDifficulty}
+                onModeChange={setGameMode}
               />
             </div>
           </div>

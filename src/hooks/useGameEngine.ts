@@ -8,7 +8,8 @@ import {
   PowerUp, 
   PowerUpType,
   ActivePowerUp,
-  DIFFICULTY_SETTINGS 
+  DIFFICULTY_SETTINGS,
+  GameMode
 } from '@/types/game';
 
 const GRID_SIZE = 20;
@@ -79,9 +80,12 @@ export function useGameEngine(config: GameConfig) {
     return state.activePowerUps.some(p => p.type === 'invincibility');
   }, [state.activePowerUps]);
 
-  const checkCollision = useCallback((head: Position, snake: Position[]): boolean => {
-    if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE) {
-      return true;
+  const checkCollision = useCallback((head: Position, snake: Position[], mode: GameMode): boolean => {
+    // In classic mode, hitting walls is game over
+    if (mode === 'classic') {
+      if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE) {
+        return true;
+      }
     }
     if (hasInvincibility()) return false;
     return snake.slice(1).some(seg => seg.x === head.x && seg.y === head.y);
@@ -101,7 +105,15 @@ export function useGameEngine(config: GameConfig) {
         case 'RIGHT': head.x += 1; break;
       }
 
-      if (checkCollision(head, prev.snake)) {
+      // In endless mode, wrap around the edges
+      if (config.mode === 'endless') {
+        if (head.x < 0) head.x = GRID_SIZE - 1;
+        if (head.x >= GRID_SIZE) head.x = 0;
+        if (head.y < 0) head.y = GRID_SIZE - 1;
+        if (head.y >= GRID_SIZE) head.y = 0;
+      }
+
+      if (checkCollision(head, prev.snake, config.mode)) {
         return { ...prev, isGameOver: true, isPlaying: false };
       }
 

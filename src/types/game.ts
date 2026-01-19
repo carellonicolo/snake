@@ -1,6 +1,7 @@
 export type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
 export type Difficulty = 'easy' | 'medium' | 'hard';
 export type Theme = 'nokia' | 'arcade' | 'terminal';
+export type GameMode = 'classic' | 'endless';
 export type PowerUpType = 'slowdown' | 'double_points' | 'invincibility';
 
 export interface Position {
@@ -44,6 +45,7 @@ export interface GameConfig {
   baseSpeed: number;
   difficulty: Difficulty;
   theme: Theme;
+  mode: GameMode;
 }
 
 export interface ThemeColors {

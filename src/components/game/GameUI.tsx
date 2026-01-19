@@ -1,10 +1,11 @@
-import { GameState, Theme, Difficulty, ActivePowerUp } from '@/types/game';
+import { GameState, Theme, Difficulty, GameMode } from '@/types/game';
 import { Play, Pause, RotateCcw, Volume2, VolumeX } from 'lucide-react';
 
 interface GameUIProps {
   state: GameState;
   theme: Theme;
   difficulty: Difficulty;
+  gameMode: GameMode;
   soundEnabled: boolean;
   onStart: () => void;
   onPause: () => void;
@@ -12,6 +13,7 @@ interface GameUIProps {
   onToggleSound: () => void;
   onThemeChange: (theme: Theme) => void;
   onDifficultyChange: (difficulty: Difficulty) => void;
+  onModeChange: (mode: GameMode) => void;
 }
 
 const THEME_LABELS: Record<Theme, string> = {
@@ -26,6 +28,11 @@ const DIFFICULTY_LABELS: Record<Difficulty, string> = {
   hard: 'Difficile',
 };
 
+const MODE_LABELS: Record<GameMode, { label: string; icon: string; description: string }> = {
+  classic: { label: 'Classic', icon: '🧱', description: 'Muri letali' },
+  endless: { label: 'Endless', icon: '♾️', description: 'Wrap-around' },
+};
+
 const POWERUP_INFO: Record<string, { icon: string; label: string }> = {
   slowdown: { icon: '⏱️', label: 'Rallentamento' },
   double_points: { icon: '×2', label: 'Punti Doppi' },
@@ -36,6 +43,7 @@ export function GameUI({
   state,
   theme,
   difficulty,
+  gameMode,
   soundEnabled,
   onStart,
   onPause,
@@ -43,6 +51,7 @@ export function GameUI({
   onToggleSound,
   onThemeChange,
   onDifficultyChange,
+  onModeChange,
 }: GameUIProps) {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -60,7 +69,9 @@ export function GameUI({
         </div>
         <div className="text-right space-y-1">
           <div className="text-primary">{formatTime(state.gameTime)}</div>
-          <div className="text-muted-foreground">{DIFFICULTY_LABELS[difficulty]}</div>
+          <div className="text-muted-foreground">
+            {DIFFICULTY_LABELS[difficulty]} • {MODE_LABELS[gameMode].icon}
+          </div>
         </div>
       </div>
 
@@ -147,6 +158,31 @@ export function GameUI({
                   }`}
                 >
                   {DIFFICULTY_LABELS[d]}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-pixel text-muted-foreground mb-2">MODALITÀ</label>
+            <div className="flex gap-2">
+              {(['classic', 'endless'] as GameMode[]).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => onModeChange(m)}
+                  className={`flex-1 py-2 px-3 text-xs font-terminal rounded transition-all ${
+                    gameMode === m
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    <span>{MODE_LABELS[m].icon}</span>
+                    <span>{MODE_LABELS[m].label}</span>
+                  </div>
+                  <div className="text-[10px] opacity-70 mt-1">
+                    {MODE_LABELS[m].description}
+                  </div>
                 </button>
               ))}
             </div>
