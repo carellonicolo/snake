@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, forwardRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useGameEngine } from '@/hooks/useGameEngine';
@@ -12,7 +12,7 @@ import { Difficulty, Theme, GameConfig, GameMode } from '@/types/game';
 import { LogOut, User, Trophy, BarChart3, ChevronDown, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const Game = forwardRef<HTMLDivElement>((props, ref) => {
+export default function Game() {
   const { user, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -197,7 +197,7 @@ const Game = forwardRef<HTMLDivElement>((props, ref) => {
   const isGameActive = state.isPlaying && !state.isPaused && !state.isGameOver;
 
   return (
-    <div ref={ref} className="h-screen w-screen bg-background flex flex-col overflow-hidden">
+    <div className="h-screen w-screen bg-background flex flex-col overflow-hidden">
       {/* Header - Hidden during active gameplay */}
       <header className={`border-b border-border p-3 transition-all duration-300 shrink-0 ${isGameActive ? 'opacity-0 pointer-events-none h-0 p-0 overflow-hidden' : ''}`}>
         <div className="max-w-6xl mx-auto flex items-center justify-between">
@@ -350,8 +350,4 @@ const Game = forwardRef<HTMLDivElement>((props, ref) => {
       )}
     </div>
   );
-});
-
-Game.displayName = 'Game';
-
-export default Game;
+}
