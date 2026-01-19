@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GameState, Theme, THEME_COLORS, PowerUpType } from '@/types/game';
 
 interface GameCanvasProps {
@@ -16,8 +16,31 @@ const POWER_UP_SYMBOLS: Record<PowerUpType, string> = {
 
 export function GameCanvas({ state, theme, gridSize, cellSize }: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
   const colors = THEME_COLORS[theme];
-  const canvasSize = gridSize * cellSize;
+  const baseCanvasSize = gridSize * cellSize;
+
+  // Calculate scale to fit the container
+  useEffect(() => {
+    const updateScale = () => {
+      if (!containerRef.current) return;
+      
+      const container = containerRef.current;
+      const maxWidth = container.clientWidth - 32;
+      const maxHeight = window.innerHeight - 200;
+      
+      const scaleX = maxWidth / baseCanvasSize;
+      const scaleY = maxHeight / baseCanvasSize;
+      const newScale = Math.min(scaleX, scaleY, 1.5);
+      
+      setScale(Math.max(0.5, newScale));
+    };
+
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    return () => window.removeEventListener('resize', updateScale);
+  }, [baseCanvasSize]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -28,7 +51,7 @@ export function GameCanvas({ state, theme, gridSize, cellSize }: GameCanvasProps
 
     // Clear canvas
     ctx.fillStyle = colors.background;
-    ctx.fillRect(0, 0, canvasSize, canvasSize);
+    ctx.fillRect(0, 0, baseCanvasSize, baseCanvasSize);
 
     // Draw grid
     ctx.strokeStyle = colors.grid;
@@ -36,11 +59,11 @@ export function GameCanvas({ state, theme, gridSize, cellSize }: GameCanvasProps
     for (let i = 0; i <= gridSize; i++) {
       ctx.beginPath();
       ctx.moveTo(i * cellSize, 0);
-      ctx.lineTo(i * cellSize, canvasSize);
+      ctx.lineTo(i * cellSize, baseCanvasSize);
       ctx.stroke();
       ctx.beginPath();
       ctx.moveTo(0, i * cellSize);
-      ctx.lineTo(canvasSize, i * cellSize);
+      ctx.lineTo(baseCanvasSize, i * cellSize);
       ctx.stroke();
     }
 
@@ -50,7 +73,6 @@ export function GameCanvas({ state, theme, gridSize, cellSize }: GameCanvasProps
       ctx.fillStyle = isHead ? colors.snakeHead : colors.snake;
       
       if (theme === 'nokia') {
-        // Pixel-perfect squares for Nokia
         ctx.fillRect(
           segment.x * cellSize + 1,
           segment.y * cellSize + 1,
@@ -58,7 +80,6 @@ export function GameCanvas({ state, theme, gridSize, cellSize }: GameCanvasProps
           cellSize - 2
         );
       } else if (theme === 'arcade') {
-        // Rounded corners for arcade
         const x = segment.x * cellSize + 1;
         const y = segment.y * cellSize + 1;
         const w = cellSize - 2;
@@ -75,7 +96,6 @@ export function GameCanvas({ state, theme, gridSize, cellSize }: GameCanvasProps
         ctx.quadraticCurveTo(x, y, x + r, y);
         ctx.fill();
         
-        // Glow effect for head
         if (isHead) {
           ctx.shadowColor = colors.snakeHead;
           ctx.shadowBlur = 10;
@@ -83,7 +103,6 @@ export function GameCanvas({ state, theme, gridSize, cellSize }: GameCanvasProps
           ctx.shadowBlur = 0;
         }
       } else {
-        // Terminal style with slight glow
         ctx.shadowColor = colors.snake;
         ctx.shadowBlur = isHead ? 8 : 4;
         ctx.fillRect(
@@ -131,7 +150,6 @@ export function GameCanvas({ state, theme, gridSize, cellSize }: GameCanvasProps
       ctx.arc(puX, puY, cellSize / 2 - 2, 0, Math.PI * 2);
       ctx.fill();
       
-      // Pulsing effect
       const pulse = Math.sin(Date.now() / 200) * 0.2 + 0.8;
       ctx.globalAlpha = pulse;
       ctx.beginPath();
@@ -141,7 +159,6 @@ export function GameCanvas({ state, theme, gridSize, cellSize }: GameCanvasProps
       ctx.stroke();
       ctx.globalAlpha = 1;
 
-      // Symbol
       ctx.fillStyle = colors.background;
       ctx.font = `bold ${cellSize / 2}px Arial`;
       ctx.textAlign = 'center';
@@ -149,7 +166,7 @@ export function GameCanvas({ state, theme, gridSize, cellSize }: GameCanvasProps
       ctx.fillText(POWER_UP_SYMBOLS[state.powerUp.type], puX, puY);
     }
 
-  }, [state, theme, gridSize, cellSize, colors, canvasSize]);
+  }, [state, theme, gridSize, cellSize, colors, baseCanvasSize]);
 
   const getCanvasClass = () => {
     switch (theme) {
@@ -165,12 +182,18 @@ export function GameCanvas({ state, theme, gridSize, cellSize }: GameCanvasProps
   };
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={canvasSize}
-      height={canvasSize}
-      className={`${getCanvasClass()} mx-auto`}
-      style={{ imageRendering: 'pixelated' }}
-    />
+    <div ref={containerRef} className="w-full flex items-center justify-center">
+      <canvas
+        ref={canvasRef}
+        width={baseCanvasSize}
+        height={baseCanvasSize}
+        className={`${getCanvasClass()}`}
+        style={{ 
+          imageRendering: 'pixelated',
+          width: baseCanvasSize * scale,
+          height: baseCanvasSize * scale,
+        }}
+      />
+    </div>
   );
 }

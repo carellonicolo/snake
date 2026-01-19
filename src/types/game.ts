@@ -93,7 +93,7 @@ export const THEME_COLORS: Record<Theme, ThemeColors> = {
 };
 
 export const DIFFICULTY_SETTINGS: Record<Difficulty, { speed: number; powerUpChance: number }> = {
-  easy: { speed: 150, powerUpChance: 0.15 },
-  medium: { speed: 100, powerUpChance: 0.1 },
-  hard: { speed: 70, powerUpChance: 0.08 }
+  easy: { speed: 180, powerUpChance: 0.15 },
+  medium: { speed: 110, powerUpChance: 0.1 },
+  hard: { speed: 55, powerUpChance: 0.08 }
 };

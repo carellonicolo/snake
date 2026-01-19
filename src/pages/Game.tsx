@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useGameEngine } from '@/hooks/useGameEngine';
@@ -9,7 +9,7 @@ import { GameUI } from '@/components/game/GameUI';
 import { Leaderboard } from '@/components/game/Leaderboard';
 import { UserStats } from '@/components/game/UserStats';
 import { Difficulty, Theme, GameConfig, GameMode } from '@/types/game';
-import { LogOut, User, Trophy, BarChart3 } from 'lucide-react';
+import { LogOut, User, Trophy, BarChart3, ChevronDown, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Game() {
@@ -21,12 +21,14 @@ export default function Game() {
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
   const [gameMode, setGameMode] = useState<GameMode>('classic');
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [activeTab, setActiveTab] = useState<'game' | 'leaderboard' | 'stats'>('game');
   const [username, setUsername] = useState<string>('');
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showModal, setShowModal] = useState<'leaderboard' | 'stats' | null>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   const config: GameConfig = {
-    gridSize: 20,
-    cellSize: 20,
+    gridSize: 25,
+    cellSize: 24,
     baseSpeed: 100,
     difficulty,
     theme,
@@ -35,6 +37,17 @@ export default function Game() {
 
   const { state, startGame, pauseGame, resetGame, gridSize, cellSize } = useGameEngine(config);
   const { playSound } = useSoundEffects(soundEnabled, theme);
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -93,7 +106,7 @@ export default function Game() {
         difficulty,
         theme,
         game_duration_seconds: state.gameTime,
-        powerups_collected: 0, // Could track this in state
+        powerups_collected: 0,
       });
 
       // Update user stats
@@ -121,11 +134,21 @@ export default function Game() {
       }
 
       toast({
-        title: 'Punteggio salvato!',
-        description: `Hai ottenuto ${state.score} punti`,
+        title: '🎮 Partita terminata!',
+        description: (
+          <div className="flex flex-col gap-1">
+            <span className="text-lg font-bold">{state.score} punti</span>
+            <span className="text-sm opacity-80">Lunghezza serpente: {state.snake.length}</span>
+          </div>
+        ),
       });
     } catch (error) {
       console.error('Error saving score:', error);
+      toast({
+        title: '❌ Errore',
+        description: 'Impossibile salvare il punteggio',
+        variant: 'destructive',
+      });
     }
   }, [user, state.isGameOver, state.score, state.snake.length, state.gameTime, difficulty, theme, toast]);
 
@@ -154,6 +177,11 @@ export default function Game() {
   }, [theme, difficulty, soundEnabled, savePreferences]);
 
   const handleSignOut = async () => {
+    setShowUserMenu(false);
+    toast({
+      title: '👋 Arrivederci!',
+      description: 'Sei stato disconnesso',
+    });
     await signOut();
     navigate('/auth');
   };
@@ -166,69 +194,117 @@ export default function Game() {
     );
   }
 
+  const isGameActive = state.isPlaying && !state.isPaused && !state.isGameOver;
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border p-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <h1 className="font-pixel text-xl text-primary">🐍 SNAKE</h1>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header - Hidden during active gameplay */}
+      <header className={`border-b border-border p-3 transition-all duration-300 ${isGameActive ? 'opacity-0 pointer-events-none h-0 p-0 overflow-hidden' : ''}`}>
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <h1 className="font-pixel text-lg text-primary">🐍 SNAKE</h1>
           
-          <div className="flex items-center gap-4">
-            <span className="font-terminal text-sm text-muted-foreground flex items-center gap-2">
-              <User size={16} />
-              {username}
-            </span>
+          {/* User Dropdown */}
+          <div className="relative" ref={userMenuRef}>
             <button
-              onClick={handleSignOut}
-              className="text-muted-foreground hover:text-destructive transition-colors"
-              aria-label="Logout"
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors font-terminal text-sm"
             >
-              <LogOut size={20} />
+              <User size={16} className="text-primary" />
+              <span className="text-foreground">{username}</span>
+              <ChevronDown size={14} className={`text-muted-foreground transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
             </button>
+
+            {/* Dropdown Menu */}
+            {showUserMenu && (
+              <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-border rounded-lg shadow-xl z-50 overflow-hidden animate-fade-in">
+                <div className="p-3 border-b border-border bg-muted/30">
+                  <div className="font-terminal text-xs text-muted-foreground">Connesso come</div>
+                  <div className="font-terminal text-sm text-primary truncate">{username}</div>
+                </div>
+                
+                <div className="p-1">
+                  <button
+                    onClick={() => { setShowModal('leaderboard'); setShowUserMenu(false); }}
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded hover:bg-muted transition-colors text-left"
+                  >
+                    <Trophy size={18} className="text-yellow-500" />
+                    <span className="font-terminal">Classifica Globale</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => { setShowModal('stats'); setShowUserMenu(false); }}
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded hover:bg-muted transition-colors text-left"
+                  >
+                    <BarChart3 size={18} className="text-blue-500" />
+                    <span className="font-terminal">Le Tue Statistiche</span>
+                  </button>
+                </div>
+                
+                <div className="p-1 border-t border-border">
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded hover:bg-destructive/10 transition-colors text-left text-destructive"
+                  >
+                    <LogOut size={18} />
+                    <span className="font-terminal">Esci</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Tabs */}
-      <div className="max-w-4xl mx-auto px-4 py-4">
-        <div className="flex gap-2 mb-6">
-          {[
-            { id: 'game', label: 'Gioca', icon: '🎮' },
-            { id: 'leaderboard', label: 'Classifica', icon: '🏆' },
-            { id: 'stats', label: 'Statistiche', icon: '📊' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className={`flex-1 py-2 px-4 font-terminal text-sm rounded transition-all flex items-center justify-center gap-2 ${
-                activeTab === tab.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
-              }`}
-            >
-              <span>{tab.icon}</span>
-              <span className="hidden sm:inline">{tab.label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Content */}
-        {activeTab === 'game' && (
-          <div className="grid md:grid-cols-[1fr_320px] gap-6">
-            {/* Game Area */}
-            <div className="space-y-4">
-              <div className="flex justify-center">
-                <GameCanvas
-                  state={state}
-                  theme={theme}
-                  gridSize={gridSize}
-                  cellSize={cellSize}
-                />
-              </div>
+      {/* Game Area - Full Screen */}
+      <div className="flex-1 flex items-center justify-center p-4 relative">
+        {/* HUD during gameplay */}
+        {isGameActive && (
+          <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-20 pointer-events-none">
+            <div className="bg-background/80 backdrop-blur-sm rounded-lg px-4 py-2 border border-border">
+              <div className="font-pixel text-xs text-muted-foreground">SCORE</div>
+              <div className="font-pixel text-xl text-primary">{state.score}</div>
             </div>
+            <div className="bg-background/80 backdrop-blur-sm rounded-lg px-4 py-2 border border-border">
+              <div className="font-pixel text-xs text-muted-foreground">LENGTH</div>
+              <div className="font-pixel text-xl text-primary">{state.snake.length}</div>
+            </div>
+          </div>
+        )}
 
-            {/* Controls */}
-            <div className="bg-card p-4 rounded-lg border border-border">
+        {/* Active Power-ups HUD */}
+        {isGameActive && state.activePowerUps.length > 0 && (
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+            {state.activePowerUps.map((pu, idx) => {
+              const remaining = Math.max(0, Math.ceil((pu.endTime - Date.now()) / 1000));
+              const icons: Record<string, string> = {
+                slowdown: '⏱️',
+                double_points: '×2',
+                invincibility: '🛡️',
+              };
+              return (
+                <div
+                  key={idx}
+                  className="flex items-center gap-1 px-3 py-1 bg-accent/90 backdrop-blur-sm rounded-full text-sm font-terminal powerup-pulse"
+                >
+                  <span>{icons[pu.type]}</span>
+                  <span>{remaining}s</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <GameCanvas
+          state={state}
+          theme={theme}
+          gridSize={gridSize}
+          cellSize={cellSize}
+        />
+
+        {/* Overlay Menu - Shows when not actively playing */}
+        {!isGameActive && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-sm z-10">
+            <div className="bg-card border border-border rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl animate-fade-in">
               <GameUI
                 state={state}
                 theme={theme}
@@ -246,19 +322,32 @@ export default function Game() {
             </div>
           </div>
         )}
-
-        {activeTab === 'leaderboard' && (
-          <div className="bg-card p-6 rounded-lg border border-border max-w-lg mx-auto">
-            <Leaderboard limit={20} />
-          </div>
-        )}
-
-        {activeTab === 'stats' && (
-          <div className="bg-card p-6 rounded-lg border border-border max-w-lg mx-auto">
-            <UserStats />
-          </div>
-        )}
       </div>
+
+      {/* Modal for Leaderboard/Stats */}
+      {showModal && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-xl p-6 max-w-lg w-full max-h-[80vh] overflow-auto shadow-2xl animate-fade-in">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-pixel text-sm text-primary">
+                {showModal === 'leaderboard' ? '🏆 CLASSIFICA GLOBALE' : '📊 LE TUE STATISTICHE'}
+              </h2>
+              <button
+                onClick={() => setShowModal(null)}
+                className="p-2 hover:bg-muted rounded-lg transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            {showModal === 'leaderboard' ? (
+              <Leaderboard limit={20} />
+            ) : (
+              <UserStats />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
