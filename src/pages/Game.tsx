@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, forwardRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useGameEngine } from '@/hooks/useGameEngine';
@@ -12,7 +12,7 @@ import { Difficulty, Theme, GameConfig, GameMode } from '@/types/game';
 import { LogOut, User, Trophy, BarChart3, ChevronDown, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-export default function Game() {
+const Game = forwardRef<HTMLDivElement>((props, ref) => {
   const { user, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -27,8 +27,8 @@ export default function Game() {
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const config: GameConfig = {
-    gridSize: 25,
-    cellSize: 24,
+    gridSize: 30,
+    cellSize: 20,
     baseSpeed: 100,
     difficulty,
     theme,
@@ -197,9 +197,9 @@ export default function Game() {
   const isGameActive = state.isPlaying && !state.isPaused && !state.isGameOver;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div ref={ref} className="h-screen w-screen bg-background flex flex-col overflow-hidden">
       {/* Header - Hidden during active gameplay */}
-      <header className={`border-b border-border p-3 transition-all duration-300 ${isGameActive ? 'opacity-0 pointer-events-none h-0 p-0 overflow-hidden' : ''}`}>
+      <header className={`border-b border-border p-3 transition-all duration-300 shrink-0 ${isGameActive ? 'opacity-0 pointer-events-none h-0 p-0 overflow-hidden' : ''}`}>
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <h1 className="font-pixel text-lg text-primary">🐍 SNAKE</h1>
           
@@ -256,17 +256,17 @@ export default function Game() {
       </header>
 
       {/* Game Area - Full Screen */}
-      <div className="flex-1 flex items-center justify-center p-4 relative">
+      <div className="flex-1 flex items-center justify-center relative min-h-0">
         {/* HUD during gameplay */}
         {isGameActive && (
           <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-20 pointer-events-none">
             <div className="bg-background/80 backdrop-blur-sm rounded-lg px-4 py-2 border border-border">
               <div className="font-pixel text-xs text-muted-foreground">SCORE</div>
-              <div className="font-pixel text-xl text-primary">{state.score}</div>
+              <div className="font-pixel text-2xl text-primary">{state.score}</div>
             </div>
             <div className="bg-background/80 backdrop-blur-sm rounded-lg px-4 py-2 border border-border">
               <div className="font-pixel text-xs text-muted-foreground">LENGTH</div>
-              <div className="font-pixel text-xl text-primary">{state.snake.length}</div>
+              <div className="font-pixel text-2xl text-primary">{state.snake.length}</div>
             </div>
           </div>
         )}
@@ -350,4 +350,8 @@ export default function Game() {
       )}
     </div>
   );
-}
+});
+
+Game.displayName = 'Game';
+
+export default Game;
