@@ -12,12 +12,12 @@ import {
   GameMode
 } from '@/types/game';
 
-const GRID_SIZE = 20;
+const GRID_SIZE = 30;
 const CELL_SIZE = 20;
 
 const getInitialState = (): GameState => ({
-  snake: [{ x: 10, y: 10 }],
-  food: { position: { x: 15, y: 15 }, value: 10 },
+  snake: [{ x: 15, y: 15 }],
+  food: { position: { x: 20, y: 20 }, value: 10 },
   powerUp: null,
   activePowerUps: [],
   direction: 'RIGHT',
@@ -62,41 +62,80 @@ const generatePowerUp = (snake: Position[], food: Food): PowerUp | null => {
 
 export function useGameEngine(config: GameConfig) {
   const [state, setState] = useState<GameState>(getInitialState());
-  const directionRef = useRef<Direction>('RIGHT');
-  const gameLoopRef = useRef<number | null>(null);
-  const powerUpTimerRef = useRef<number | null>(null);
+  
+  // Use refs to avoid stale closures in game loop
+  const stateRef = useRef<GameState>(state);
+  const configRef = useRef<GameConfig>(config);
+  const directionQueueRef = useRef<Direction[]>([]);
+  const currentDirectionRef = useRef<Direction>('RIGHT');
+  const lastMoveTimeRef = useRef<number>(0);
+  const animationFrameRef = useRef<number | null>(null);
 
-  const getSpeed = useCallback(() => {
-    const baseSpeed = DIFFICULTY_SETTINGS[config.difficulty].speed;
-    const hasSlowdown = state.activePowerUps.some(p => p.type === 'slowdown');
+  // Keep refs in sync
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  useEffect(() => {
+    configRef.current = config;
+  }, [config]);
+
+  const getSpeed = useCallback((activePowerUps: ActivePowerUp[]) => {
+    const baseSpeed = DIFFICULTY_SETTINGS[configRef.current.difficulty].speed;
+    const hasSlowdown = activePowerUps.some(p => p.type === 'slowdown');
     return hasSlowdown ? baseSpeed * 1.5 : baseSpeed;
-  }, [config.difficulty, state.activePowerUps]);
+  }, []);
 
-  const hasDoublePoints = useCallback(() => {
-    return state.activePowerUps.some(p => p.type === 'double_points');
-  }, [state.activePowerUps]);
+  const hasDoublePoints = useCallback((activePowerUps: ActivePowerUp[]) => {
+    return activePowerUps.some(p => p.type === 'double_points');
+  }, []);
 
-  const hasInvincibility = useCallback(() => {
-    return state.activePowerUps.some(p => p.type === 'invincibility');
-  }, [state.activePowerUps]);
+  const hasInvincibility = useCallback((activePowerUps: ActivePowerUp[]) => {
+    return activePowerUps.some(p => p.type === 'invincibility');
+  }, []);
 
-  const checkCollision = useCallback((head: Position, snake: Position[], mode: GameMode): boolean => {
+  const checkCollision = useCallback((head: Position, snake: Position[], mode: GameMode, invincible: boolean): boolean => {
     // In classic mode, hitting walls is game over
     if (mode === 'classic') {
       if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE) {
         return true;
       }
     }
-    if (hasInvincibility()) return false;
+    if (invincible) return false;
     return snake.slice(1).some(seg => seg.x === head.x && seg.y === head.y);
-  }, [hasInvincibility]);
+  }, []);
+
+  const getOppositeDirection = (dir: Direction): Direction => {
+    const opposites: Record<Direction, Direction> = {
+      UP: 'DOWN',
+      DOWN: 'UP',
+      LEFT: 'RIGHT',
+      RIGHT: 'LEFT',
+    };
+    return opposites[dir];
+  };
+
+  const processNextDirection = useCallback((): Direction => {
+    const queue = directionQueueRef.current;
+    const currentDir = currentDirectionRef.current;
+    
+    // Process queue to find first valid direction
+    while (queue.length > 0) {
+      const nextDir = queue.shift()!;
+      if (getOppositeDirection(nextDir) !== currentDir) {
+        currentDirectionRef.current = nextDir;
+        return nextDir;
+      }
+    }
+    return currentDir;
+  }, []);
 
   const moveSnake = useCallback(() => {
     setState(prev => {
       if (!prev.isPlaying || prev.isPaused || prev.isGameOver) return prev;
 
+      const direction = processNextDirection();
       const head = { ...prev.snake[0] };
-      const direction = directionRef.current;
 
       switch (direction) {
         case 'UP': head.y -= 1; break;
@@ -106,14 +145,15 @@ export function useGameEngine(config: GameConfig) {
       }
 
       // In endless mode, wrap around the edges
-      if (config.mode === 'endless') {
+      if (configRef.current.mode === 'endless') {
         if (head.x < 0) head.x = GRID_SIZE - 1;
         if (head.x >= GRID_SIZE) head.x = 0;
         if (head.y < 0) head.y = GRID_SIZE - 1;
         if (head.y >= GRID_SIZE) head.y = 0;
       }
 
-      if (checkCollision(head, prev.snake, config.mode)) {
+      const invincible = hasInvincibility(prev.activePowerUps);
+      if (checkCollision(head, prev.snake, configRef.current.mode, invincible)) {
         return { ...prev, isGameOver: true, isPlaying: false };
       }
 
@@ -122,16 +162,16 @@ export function useGameEngine(config: GameConfig) {
       let newFood = prev.food;
       let newPowerUp = prev.powerUp;
       let newActivePowerUps = [...prev.activePowerUps];
-      let powerUpsCollected = 0;
 
       // Check food collision
       if (head.x === prev.food.position.x && head.y === prev.food.position.y) {
-        const points = hasDoublePoints() ? prev.food.value * 2 : prev.food.value;
+        const doublePoints = hasDoublePoints(prev.activePowerUps);
+        const points = doublePoints ? prev.food.value * 2 : prev.food.value;
         newScore += points;
         newFood = generateFood(newSnake);
         
         // Chance to spawn power-up
-        if (!prev.powerUp && Math.random() < DIFFICULTY_SETTINGS[config.difficulty].powerUpChance) {
+        if (!prev.powerUp && Math.random() < DIFFICULTY_SETTINGS[configRef.current.difficulty].powerUpChance) {
           newPowerUp = generatePowerUp(newSnake, newFood);
         }
       } else {
@@ -146,7 +186,6 @@ export function useGameEngine(config: GameConfig) {
         };
         newActivePowerUps.push(activePowerUp);
         newPowerUp = null;
-        powerUpsCollected = 1;
       }
 
       // Clean expired power-ups
@@ -163,14 +202,58 @@ export function useGameEngine(config: GameConfig) {
         gameTime: prev.startTime ? Math.floor((Date.now() - prev.startTime) / 1000) : 0,
       };
     });
-  }, [checkCollision, config.difficulty, hasDoublePoints]);
+  }, [checkCollision, hasDoublePoints, hasInvincibility, processNextDirection]);
+
+  // Game loop using requestAnimationFrame for smoother performance
+  const gameLoop = useCallback((timestamp: number) => {
+    const currentState = stateRef.current;
+    
+    if (!currentState.isPlaying || currentState.isPaused || currentState.isGameOver) {
+      animationFrameRef.current = null;
+      return;
+    }
+
+    const speed = getSpeed(currentState.activePowerUps);
+    const elapsed = timestamp - lastMoveTimeRef.current;
+
+    if (elapsed >= speed) {
+      lastMoveTimeRef.current = timestamp;
+      moveSnake();
+    }
+
+    animationFrameRef.current = requestAnimationFrame(gameLoop);
+  }, [getSpeed, moveSnake]);
+
+  // Start/stop game loop based on state
+  useEffect(() => {
+    if (state.isPlaying && !state.isPaused && !state.isGameOver) {
+      if (!animationFrameRef.current) {
+        lastMoveTimeRef.current = performance.now();
+        animationFrameRef.current = requestAnimationFrame(gameLoop);
+      }
+    } else {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+    }
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+    };
+  }, [state.isPlaying, state.isPaused, state.isGameOver, gameLoop]);
 
   const startGame = useCallback(() => {
     const initial = getInitialState();
     initial.isPlaying = true;
     initial.startTime = Date.now();
     initial.food = generateFood(initial.snake);
-    directionRef.current = 'RIGHT';
+    currentDirectionRef.current = 'RIGHT';
+    directionQueueRef.current = [];
+    lastMoveTimeRef.current = performance.now();
     setState(initial);
   }, []);
 
@@ -179,45 +262,31 @@ export function useGameEngine(config: GameConfig) {
   }, []);
 
   const resetGame = useCallback(() => {
-    if (gameLoopRef.current) {
-      cancelAnimationFrame(gameLoopRef.current);
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
     }
     setState(getInitialState());
-    directionRef.current = 'RIGHT';
+    currentDirectionRef.current = 'RIGHT';
+    directionQueueRef.current = [];
   }, []);
 
   const changeDirection = useCallback((newDirection: Direction) => {
-    const opposites: Record<Direction, Direction> = {
-      UP: 'DOWN',
-      DOWN: 'UP',
-      LEFT: 'RIGHT',
-      RIGHT: 'LEFT',
-    };
+    // Add to queue instead of immediately changing
+    // This prevents rapid key presses from causing issues
+    const queue = directionQueueRef.current;
     
-    if (opposites[newDirection] !== directionRef.current) {
-      directionRef.current = newDirection;
+    // Limit queue size to prevent input flooding
+    if (queue.length >= 2) return;
+    
+    // Check against last queued direction or current direction
+    const lastDirection = queue.length > 0 ? queue[queue.length - 1] : currentDirectionRef.current;
+    
+    // Don't add if it's the opposite of the last direction or same direction
+    if (getOppositeDirection(newDirection) !== lastDirection && newDirection !== lastDirection) {
+      queue.push(newDirection);
     }
   }, []);
-
-  // Game loop
-  useEffect(() => {
-    if (!state.isPlaying || state.isPaused || state.isGameOver) {
-      if (gameLoopRef.current) {
-        clearInterval(gameLoopRef.current);
-        gameLoopRef.current = null;
-      }
-      return;
-    }
-
-    const speed = getSpeed();
-    gameLoopRef.current = window.setInterval(moveSnake, speed);
-
-    return () => {
-      if (gameLoopRef.current) {
-        clearInterval(gameLoopRef.current);
-      }
-    };
-  }, [state.isPlaying, state.isPaused, state.isGameOver, moveSnake, getSpeed]);
 
   // Keyboard controls
   useEffect(() => {
