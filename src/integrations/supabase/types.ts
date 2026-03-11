@@ -63,9 +63,6 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           id: string
-          preferred_difficulty: string | null
-          preferred_theme: string | null
-          sound_enabled: boolean | null
           updated_at: string
           user_id: string
           username: string
@@ -74,9 +71,6 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           id?: string
-          preferred_difficulty?: string | null
-          preferred_theme?: string | null
-          sound_enabled?: boolean | null
           updated_at?: string
           user_id: string
           username: string
@@ -85,12 +79,36 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           id?: string
+          updated_at?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      snake_preferences: {
+        Row: {
+          id: string
+          preferred_difficulty: string | null
+          preferred_theme: string | null
+          sound_enabled: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          preferred_difficulty?: string | null
+          preferred_theme?: string | null
+          sound_enabled?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
           preferred_difficulty?: string | null
           preferred_theme?: string | null
           sound_enabled?: boolean | null
           updated_at?: string
           user_id?: string
-          username?: string
         }
         Relationships: []
       }

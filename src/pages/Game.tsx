@@ -56,22 +56,33 @@ export default function Game() {
     }
   }, [user, authLoading, navigate]);
 
-  // Load user preferences
+  // Load user profile and snake preferences
   useEffect(() => {
     const loadProfile = async () => {
       if (!user) return;
 
-      const { data } = await supabase
+      // Load username from shared profiles table
+      const { data: profileData } = await supabase
         .from('profiles')
-        .select('username, preferred_theme, preferred_difficulty, sound_enabled')
+        .select('username')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (data) {
-        setUsername(data.username);
-        if (data.preferred_theme) setTheme(data.preferred_theme as Theme);
-        if (data.preferred_difficulty) setDifficulty(data.preferred_difficulty as Difficulty);
-        if (data.sound_enabled !== null) setSoundEnabled(data.sound_enabled);
+      if (profileData) {
+        setUsername(profileData.username);
+      }
+
+      // Load snake-specific preferences
+      const { data: prefsData } = await supabase
+        .from('snake_preferences')
+        .select('preferred_theme, preferred_difficulty, sound_enabled')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (prefsData) {
+        if (prefsData.preferred_theme) setTheme(prefsData.preferred_theme as Theme);
+        if (prefsData.preferred_difficulty) setDifficulty(prefsData.preferred_difficulty as Difficulty);
+        if (prefsData.sound_enabled !== null) setSoundEnabled(prefsData.sound_enabled);
       }
     };
 
@@ -109,12 +120,22 @@ export default function Game() {
         powerups_collected: 0,
       });
 
-      // Update user stats
-      const { data: currentStats } = await supabase
+      // Get or create user stats (lazy creation since trigger was removed)
+      let { data: currentStats } = await supabase
         .from('user_stats')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
+
+      if (!currentStats) {
+        // First game: create user_stats record
+        const { data: newStats } = await supabase
+          .from('user_stats')
+          .insert({ user_id: user.id })
+          .select()
+          .single();
+        currentStats = newStats;
+      }
 
       if (currentStats) {
         const gamesByDifficulty = currentStats.games_by_difficulty as Record<string, number>;
@@ -162,14 +183,15 @@ export default function Game() {
   const savePreferences = useCallback(async () => {
     if (!user) return;
 
+    // Upsert snake_preferences (creates if not exists, updates if exists)
     await supabase
-      .from('profiles')
-      .update({
+      .from('snake_preferences')
+      .upsert({
+        user_id: user.id,
         preferred_theme: theme,
         preferred_difficulty: difficulty,
         sound_enabled: soundEnabled,
-      })
-      .eq('user_id', user.id);
+      }, { onConflict: 'user_id' });
   }, [user, theme, difficulty, soundEnabled]);
 
   useEffect(() => {
@@ -202,7 +224,7 @@ export default function Game() {
       <header className={`border-b border-border p-3 transition-all duration-300 shrink-0 ${isGameActive ? 'opacity-0 pointer-events-none h-0 p-0 overflow-hidden' : ''}`}>
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <h1 className="font-pixel text-lg text-primary">🐍 SNAKE</h1>
-          
+
           {/* User Dropdown */}
           <div className="relative" ref={userMenuRef}>
             <button
@@ -221,7 +243,7 @@ export default function Game() {
                   <div className="font-terminal text-xs text-muted-foreground">Connesso come</div>
                   <div className="font-terminal text-sm text-primary truncate">{username}</div>
                 </div>
-                
+
                 <div className="p-1">
                   <button
                     onClick={() => { setShowModal('leaderboard'); setShowUserMenu(false); }}
@@ -230,7 +252,7 @@ export default function Game() {
                     <Trophy size={18} className="text-yellow-500" />
                     <span className="font-terminal">Classifica Globale</span>
                   </button>
-                  
+
                   <button
                     onClick={() => { setShowModal('stats'); setShowUserMenu(false); }}
                     className="w-full flex items-center gap-3 px-3 py-2 rounded hover:bg-muted transition-colors text-left"
@@ -239,7 +261,7 @@ export default function Game() {
                     <span className="font-terminal">Le Tue Statistiche</span>
                   </button>
                 </div>
-                
+
                 <div className="p-1 border-t border-border">
                   <button
                     onClick={handleSignOut}
@@ -339,7 +361,7 @@ export default function Game() {
                 <X size={20} />
               </button>
             </div>
-            
+
             {showModal === 'leaderboard' ? (
               <Leaderboard limit={20} />
             ) : (
