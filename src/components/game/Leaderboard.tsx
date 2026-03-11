@@ -26,11 +26,16 @@ export function Leaderboard({ filterDifficulty, filterTheme, limit = 10 }: Leade
   useEffect(() => {
     const fetchLeaderboard = async () => {
       setLoading(true);
-      
-      // Get scores first
+
+      // Get scores with joined profile username
       let query = supabase
         .from('game_scores')
-        .select('id, score, snake_length, difficulty, theme, created_at, user_id')
+        .select(`
+          id, score, snake_length, difficulty, theme, created_at, user_id,
+          profiles (
+            username
+          )
+        `)
         .order('score', { ascending: false })
         .limit(limit);
 
@@ -55,24 +60,21 @@ export function Leaderboard({ filterDifficulty, filterTheme, limit = 10 }: Leade
         return;
       }
 
-      // Get usernames for all user_ids
-      const userIds = [...new Set(scores.map(s => s.user_id))];
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, username')
-        .in('user_id', userIds);
+      // Map joined data to LeaderboardEntry format
+      const entriesWithUsernames: LeaderboardEntry[] = scores.map(score => {
+        // Handle potential array or object return type from Supabase join
+        const profileData = Array.isArray(score.profiles) ? score.profiles[0] : score.profiles;
 
-      const usernameMap = new Map(profiles?.map(p => [p.user_id, p.username]) || []);
-
-      const entriesWithUsernames: LeaderboardEntry[] = scores.map(score => ({
-        id: score.id,
-        score: score.score,
-        snake_length: score.snake_length,
-        difficulty: score.difficulty,
-        theme: score.theme,
-        created_at: score.created_at,
-        username: usernameMap.get(score.user_id) || 'Anonimo',
-      }));
+        return {
+          id: score.id,
+          score: score.score,
+          snake_length: score.snake_length,
+          difficulty: score.difficulty,
+          theme: score.theme,
+          created_at: score.created_at,
+          username: profileData?.username || 'Anonimo',
+        };
+      });
 
       setEntries(entriesWithUsernames);
       setLoading(false);
@@ -127,19 +129,18 @@ export function Leaderboard({ filterDifficulty, filterTheme, limit = 10 }: Leade
         <Trophy className="w-4 h-4" />
         CLASSIFICA GLOBALE
       </h3>
-      
+
       <div className="space-y-1">
         {entries.map((entry, index) => (
           <div
             key={entry.id}
-            className={`flex items-center gap-3 p-2 rounded ${
-              index < 3 ? 'bg-accent/20' : 'bg-muted/30'
-            }`}
+            className={`flex items-center gap-3 p-2 rounded ${index < 3 ? 'bg-accent/20' : 'bg-muted/30'
+              }`}
           >
             <div className="w-8 flex justify-center">
               {getRankIcon(index + 1)}
             </div>
-            
+
             <div className="flex-1 min-w-0">
               <div className="font-terminal text-sm truncate">
                 {entry.username}
@@ -149,7 +150,7 @@ export function Leaderboard({ filterDifficulty, filterTheme, limit = 10 }: Leade
                 <span>{formatDate(entry.created_at)}</span>
               </div>
             </div>
-            
+
             <div className="text-right">
               <div className="font-pixel text-sm text-primary">
                 {entry.score}
