@@ -1,68 +1,113 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { 
-  GameState, 
-  GameConfig, 
-  Direction, 
-  Position, 
-  Food, 
-  PowerUp, 
+import {
+  GameState,
+  GameConfig,
+  Direction,
+  Position,
+  Food,
+  PowerUp,
   PowerUpType,
   ActivePowerUp,
   DIFFICULTY_SETTINGS,
-  GameMode
+  GameMode,
+  Difficulty
 } from '@/types/game';
 
-const GRID_SIZE = 30;
-const CELL_SIZE = 20;
+const COMBO_DURATION_MS = 4000; // 4 seconds to keep combo active
+const COMBO_MAX_MULTIPLIER = 5;
 
-const getInitialState = (): GameState => ({
-  snake: [{ x: 15, y: 15 }],
-  food: { position: { x: 20, y: 20 }, value: 10 },
-  powerUp: null,
-  activePowerUps: [],
-  direction: 'RIGHT',
-  score: 0,
-  isPlaying: false,
-  isPaused: false,
-  isGameOver: false,
-  startTime: null,
-  gameTime: 0,
-});
+const getInitialState = (gridSize: number, enableWalls: boolean, difficulty: Difficulty): GameState => {
+  const center = Math.floor(gridSize / 2);
+  const snake = [{ x: center, y: center }];
+  const walls = enableWalls ? generateWalls(gridSize, difficulty, snake) : [];
 
-const getRandomPosition = (snake: Position[]): Position => {
+  return {
+    snake,
+    food: generateFood(snake, gridSize, walls),
+    powerUp: null,
+    activePowerUps: [],
+    direction: 'RIGHT',
+    score: 0,
+    combo: 1,
+    comboTimer: 0,
+    walls,
+    isPlaying: false,
+    isPaused: false,
+    isGameOver: false,
+    startTime: null,
+    gameTime: 0,
+  };
+};
+
+const getRandomPosition = (gridSize: number, excludePositions: Position[]): Position => {
   let position: Position;
+  let isOccupied: boolean;
   do {
     position = {
-      x: Math.floor(Math.random() * GRID_SIZE),
-      y: Math.floor(Math.random() * GRID_SIZE),
+      x: Math.floor(Math.random() * gridSize),
+      y: Math.floor(Math.random() * gridSize),
     };
-  } while (snake.some(seg => seg.x === position.x && seg.y === position.y));
+    isOccupied = excludePositions.some(pos => pos.x === position.x && pos.y === position.y);
+  } while (isOccupied);
   return position;
 };
 
-const generateFood = (snake: Position[]): Food => ({
-  position: getRandomPosition(snake),
+const generateWalls = (gridSize: number, difficulty: Difficulty, snake: Position[]): Position[] => {
+  const walls: Position[] = [];
+  // Number of walls based on difficulty and grid size
+  const numWalls = Math.floor((gridSize * gridSize) * (difficulty === 'hard' ? 0.05 : difficulty === 'medium' ? 0.03 : 0.01));
+
+  // Keep center clear for snake
+  const safeZone = 3;
+  const center = Math.floor(gridSize / 2);
+
+  for (let i = 0; i < numWalls; i++) {
+    let pos: Position;
+    let isValid = false;
+    let attempts = 0;
+    while (!isValid && attempts < 50) {
+      pos = {
+        x: Math.floor(Math.random() * gridSize),
+        y: Math.floor(Math.random() * gridSize)
+      };
+
+      const inSafeZone = Math.abs(pos.x - center) < safeZone && Math.abs(pos.y - center) < safeZone;
+      const onSnake = snake.some(s => s.x === pos.x && s.y === pos.y);
+      const onExistingWall = walls.some(w => w.x === pos.x && w.y === pos.y);
+
+      if (!inSafeZone && !onSnake && !onExistingWall) {
+        walls.push(pos);
+        isValid = true;
+      }
+      attempts++;
+    }
+  }
+  return walls;
+};
+
+const generateFood = (snake: Position[], gridSize: number, walls: Position[] = []): Food => ({
+  position: getRandomPosition(gridSize, [...snake, ...walls]),
   value: 10,
 });
 
-const generatePowerUp = (snake: Position[], food: Food): PowerUp | null => {
+const generatePowerUp = (snake: Position[], food: Food, gridSize: number, walls: Position[] = []): PowerUp | null => {
   const types: PowerUpType[] = ['slowdown', 'double_points', 'invincibility'];
   const type = types[Math.floor(Math.random() * types.length)];
   let position: Position;
   do {
-    position = getRandomPosition(snake);
+    position = getRandomPosition(gridSize, [...snake, ...walls]);
   } while (position.x === food.position.x && position.y === food.position.y);
-  
+
   return {
     position,
     type,
-    duration: type === 'slowdown' ? 5000 : type === 'double_points' ? 8000 : 3000,
+    duration: type === 'slowdown' ? 5000 : type === 'double_points' ? 8000 : 4000,
   };
 };
 
 export function useGameEngine(config: GameConfig) {
-  const [state, setState] = useState<GameState>(getInitialState());
-  
+  const [state, setState] = useState<GameState>(() => getInitialState(config.gridSize, config.enableWalls, config.difficulty));
+
   // Use refs to avoid stale closures in game loop
   const stateRef = useRef<GameState>(state);
   const configRef = useRef<GameConfig>(config);
@@ -78,12 +123,19 @@ export function useGameEngine(config: GameConfig) {
 
   useEffect(() => {
     configRef.current = config;
-  }, [config]);
+    // Reset state if config changes while not playing
+    if (!stateRef.current.isPlaying) {
+      setState(getInitialState(config.gridSize, config.enableWalls, config.difficulty));
+    }
+  }, [config.gridSize, config.enableWalls, config.difficulty]); // intentionally excluding other config props to avoid unnecessary resets
 
-  const getSpeed = useCallback((activePowerUps: ActivePowerUp[]) => {
-    const baseSpeed = DIFFICULTY_SETTINGS[configRef.current.difficulty].speed;
+  const getSpeed = useCallback((activePowerUps: ActivePowerUp[], config: GameConfig) => {
+    const baseSpeed = DIFFICULTY_SETTINGS[config.difficulty].speed;
+    // Apply user speed multiplier (lower multiplier = faster game, so we divide)
+    const multipliedSpeed = baseSpeed / config.speedMultiplier;
+
     const hasSlowdown = activePowerUps.some(p => p.type === 'slowdown');
-    return hasSlowdown ? baseSpeed * 1.5 : baseSpeed;
+    return hasSlowdown ? multipliedSpeed * 1.5 : multipliedSpeed;
   }, []);
 
   const hasDoublePoints = useCallback((activePowerUps: ActivePowerUp[]) => {
@@ -94,13 +146,19 @@ export function useGameEngine(config: GameConfig) {
     return activePowerUps.some(p => p.type === 'invincibility');
   }, []);
 
-  const checkCollision = useCallback((head: Position, snake: Position[], mode: GameMode, invincible: boolean): boolean => {
+  const checkCollision = useCallback((head: Position, snake: Position[], mode: GameMode, invincible: boolean, gridSize: number, walls: Position[]): boolean => {
     // In classic mode, hitting walls is game over
     if (mode === 'classic') {
-      if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE) {
+      if (head.x < 0 || head.x >= gridSize || head.y < 0 || head.y >= gridSize) {
         return true;
       }
     }
+
+    // Check inner walls
+    if (!invincible && walls.some(w => w.x === head.x && w.y === head.y)) {
+      return true;
+    }
+
     if (invincible) return false;
     return snake.slice(1).some(seg => seg.x === head.x && seg.y === head.y);
   }, []);
@@ -118,7 +176,7 @@ export function useGameEngine(config: GameConfig) {
   const processNextDirection = useCallback((): Direction => {
     const queue = directionQueueRef.current;
     const currentDir = currentDirectionRef.current;
-    
+
     // Process queue to find first valid direction
     while (queue.length > 0) {
       const nextDir = queue.shift()!;
@@ -131,11 +189,14 @@ export function useGameEngine(config: GameConfig) {
   }, []);
 
   const moveSnake = useCallback(() => {
+    const now = Date.now();
+
     setState(prev => {
       if (!prev.isPlaying || prev.isPaused || prev.isGameOver) return prev;
 
       const direction = processNextDirection();
       const head = { ...prev.snake[0] };
+      const gridSize = configRef.current.gridSize;
 
       switch (direction) {
         case 'UP': head.y -= 1; break;
@@ -146,14 +207,14 @@ export function useGameEngine(config: GameConfig) {
 
       // In endless mode, wrap around the edges
       if (configRef.current.mode === 'endless') {
-        if (head.x < 0) head.x = GRID_SIZE - 1;
-        if (head.x >= GRID_SIZE) head.x = 0;
-        if (head.y < 0) head.y = GRID_SIZE - 1;
-        if (head.y >= GRID_SIZE) head.y = 0;
+        if (head.x < 0) head.x = gridSize - 1;
+        if (head.x >= gridSize) head.x = 0;
+        if (head.y < 0) head.y = gridSize - 1;
+        if (head.y >= gridSize) head.y = 0;
       }
 
       const invincible = hasInvincibility(prev.activePowerUps);
-      if (checkCollision(head, prev.snake, configRef.current.mode, invincible)) {
+      if (checkCollision(head, prev.snake, configRef.current.mode, invincible, gridSize, prev.walls)) {
         return { ...prev, isGameOver: true, isPlaying: false };
       }
 
@@ -163,16 +224,35 @@ export function useGameEngine(config: GameConfig) {
       let newPowerUp = prev.powerUp;
       let newActivePowerUps = [...prev.activePowerUps];
 
+      // Update Combo Timer
+      let newCombo = prev.combo;
+      let newComboTimer = prev.comboTimer;
+
+      if (newCombo > 1) {
+        newComboTimer = Math.max(0, newComboTimer - (now - lastMoveTimeRef.current));
+        if (newComboTimer <= 0) {
+          newCombo = 1; // reset combo
+        }
+      }
+
       // Check food collision
       if (head.x === prev.food.position.x && head.y === prev.food.position.y) {
         const doublePoints = hasDoublePoints(prev.activePowerUps);
-        const points = doublePoints ? prev.food.value * 2 : prev.food.value;
-        newScore += points;
-        newFood = generateFood(newSnake);
-        
+        const basePoints = doublePoints ? prev.food.value * 2 : prev.food.value;
+
+        // Apply combo multiplier
+        const pointsWithCombo = basePoints * newCombo;
+        newScore += pointsWithCombo;
+
+        // Increase combo for next food
+        newCombo = Math.min(COMBO_MAX_MULTIPLIER, newCombo + 1);
+        newComboTimer = COMBO_DURATION_MS; // reset timer
+
+        newFood = generateFood(newSnake, gridSize, prev.walls);
+
         // Chance to spawn power-up
         if (!prev.powerUp && Math.random() < DIFFICULTY_SETTINGS[configRef.current.difficulty].powerUpChance) {
-          newPowerUp = generatePowerUp(newSnake, newFood);
+          newPowerUp = generatePowerUp(newSnake, newFood, gridSize, prev.walls);
         }
       } else {
         newSnake.pop();
@@ -182,14 +262,17 @@ export function useGameEngine(config: GameConfig) {
       if (prev.powerUp && head.x === prev.powerUp.position.x && head.y === prev.powerUp.position.y) {
         const activePowerUp: ActivePowerUp = {
           type: prev.powerUp.type,
-          endTime: Date.now() + prev.powerUp.duration,
+          endTime: now + prev.powerUp.duration,
         };
         newActivePowerUps.push(activePowerUp);
         newPowerUp = null;
+
+        // Eating power-up also sustains combo
+        newComboTimer = COMBO_DURATION_MS;
       }
 
       // Clean expired power-ups
-      newActivePowerUps = newActivePowerUps.filter(p => p.endTime > Date.now());
+      newActivePowerUps = newActivePowerUps.filter(p => p.endTime > now);
 
       return {
         ...prev,
@@ -198,8 +281,10 @@ export function useGameEngine(config: GameConfig) {
         powerUp: newPowerUp,
         activePowerUps: newActivePowerUps,
         score: newScore,
+        combo: newCombo,
+        comboTimer: newComboTimer,
         direction,
-        gameTime: prev.startTime ? Math.floor((Date.now() - prev.startTime) / 1000) : 0,
+        gameTime: prev.startTime ? Math.floor((now - prev.startTime) / 1000) : 0,
       };
     });
   }, [checkCollision, hasDoublePoints, hasInvincibility, processNextDirection]);
@@ -207,13 +292,13 @@ export function useGameEngine(config: GameConfig) {
   // Game loop using requestAnimationFrame for smoother performance
   const gameLoop = useCallback((timestamp: number) => {
     const currentState = stateRef.current;
-    
+
     if (!currentState.isPlaying || currentState.isPaused || currentState.isGameOver) {
       animationFrameRef.current = null;
       return;
     }
 
-    const speed = getSpeed(currentState.activePowerUps);
+    const speed = getSpeed(currentState.activePowerUps, configRef.current);
     const elapsed = timestamp - lastMoveTimeRef.current;
 
     if (elapsed >= speed) {
@@ -247,10 +332,10 @@ export function useGameEngine(config: GameConfig) {
   }, [state.isPlaying, state.isPaused, state.isGameOver, gameLoop]);
 
   const startGame = useCallback(() => {
-    const initial = getInitialState();
+    const initial = getInitialState(configRef.current.gridSize, configRef.current.enableWalls, configRef.current.difficulty);
     initial.isPlaying = true;
     initial.startTime = Date.now();
-    initial.food = generateFood(initial.snake);
+    // food + walls already generated by getInitialState
     currentDirectionRef.current = 'RIGHT';
     directionQueueRef.current = [];
     lastMoveTimeRef.current = performance.now();
@@ -266,23 +351,15 @@ export function useGameEngine(config: GameConfig) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
     }
-    setState(getInitialState());
+    setState(getInitialState(configRef.current.gridSize, configRef.current.enableWalls, configRef.current.difficulty));
     currentDirectionRef.current = 'RIGHT';
     directionQueueRef.current = [];
   }, []);
 
   const changeDirection = useCallback((newDirection: Direction) => {
-    // Add to queue instead of immediately changing
-    // This prevents rapid key presses from causing issues
     const queue = directionQueueRef.current;
-    
-    // Limit queue size to prevent input flooding
     if (queue.length >= 2) return;
-    
-    // Check against last queued direction or current direction
     const lastDirection = queue.length > 0 ? queue[queue.length - 1] : currentDirectionRef.current;
-    
-    // Don't add if it's the opposite of the last direction or same direction
     if (getOppositeDirection(newDirection) !== lastDirection && newDirection !== lastDirection) {
       queue.push(newDirection);
     }
@@ -330,13 +407,17 @@ export function useGameEngine(config: GameConfig) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [state.isPlaying, changeDirection, pauseGame]);
 
+  // Compute smooth interpolation state for rendering (fraction of move completed)
+  // This will be useful for Canvas rendering smooth movement
+  const renderFraction = Math.min(1, (performance.now() - lastMoveTimeRef.current) / getSpeed(state.activePowerUps, configRef.current));
+
   return {
     state,
     startGame,
     pauseGame,
     resetGame,
     changeDirection,
-    gridSize: GRID_SIZE,
-    cellSize: CELL_SIZE,
+    gridSize: configRef.current.gridSize,
+    renderFraction, // can be used by GameCanvas to draw snake between cells
   };
 }

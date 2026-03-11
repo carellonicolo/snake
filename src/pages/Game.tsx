@@ -21,21 +21,25 @@ export default function Game() {
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
   const [gameMode, setGameMode] = useState<GameMode>('classic');
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [gridSize, setGridSize] = useState(30);
+  const [speedMultiplier, setSpeedMultiplier] = useState(1);
+  const [enableWalls, setEnableWalls] = useState(false);
   const [username, setUsername] = useState<string>('');
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showModal, setShowModal] = useState<'leaderboard' | 'stats' | null>(null);
+  const [isShaking, setIsShaking] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const config: GameConfig = {
-    gridSize: 30,
-    cellSize: 20,
-    baseSpeed: 100,
+    gridSize,
+    speedMultiplier,
+    enableWalls,
     difficulty,
     theme,
     mode: gameMode,
   };
 
-  const { state, startGame, pauseGame, resetGame, gridSize, cellSize } = useGameEngine(config);
+  const { state, startGame, pauseGame, resetGame, renderFraction } = useGameEngine(config);
   const { playSound } = useSoundEffects(soundEnabled, theme);
 
   // Close user menu when clicking outside
@@ -89,20 +93,27 @@ export default function Game() {
     loadProfile();
   }, [user]);
 
-  // Play sounds on game events
-  const prevScore = useState(0);
+  // Play sounds and trigger shake on game events
+  const prevScore = useRef(0);
   useEffect(() => {
-    if (state.score > prevScore[0]) {
+    if (state.score > prevScore.current) {
       playSound('eat');
+      triggerShake();
     }
-    prevScore[0] = state.score;
+    prevScore.current = state.score;
   }, [state.score, playSound]);
+
+  const triggerShake = useCallback(() => {
+    setIsShaking(true);
+    setTimeout(() => setIsShaking(false), 400); // match animation duration
+  }, []);
 
   useEffect(() => {
     if (state.isGameOver) {
       playSound('gameover');
+      triggerShake();
     }
-  }, [state.isGameOver, playSound]);
+  }, [state.isGameOver, playSound, triggerShake]);
 
   // Save score on game over
   const saveScore = useCallback(async () => {
@@ -219,7 +230,7 @@ export default function Game() {
   const isGameActive = state.isPlaying && !state.isPaused && !state.isGameOver;
 
   return (
-    <div className="h-screen w-screen bg-background flex flex-col overflow-hidden">
+    <div className={`h-screen w-screen bg-background bg-retro-grid flex flex-col overflow-hidden ${isShaking ? 'animate-shake' : ''}`}>
       {/* Header - Hidden during active gameplay */}
       <header className={`border-b border-border p-3 transition-all duration-300 shrink-0 ${isGameActive ? 'opacity-0 pointer-events-none h-0 p-0 overflow-hidden' : ''}`}>
         <div className="max-w-6xl mx-auto flex items-center justify-between">
@@ -320,7 +331,7 @@ export default function Game() {
           state={state}
           theme={theme}
           gridSize={gridSize}
-          cellSize={cellSize}
+          renderFraction={renderFraction}
         />
 
         {/* Overlay Menu - Shows when not actively playing */}
@@ -333,6 +344,9 @@ export default function Game() {
                 difficulty={difficulty}
                 gameMode={gameMode}
                 soundEnabled={soundEnabled}
+                gridSize={gridSize}
+                speedMultiplier={speedMultiplier}
+                enableWalls={enableWalls}
                 onStart={startGame}
                 onPause={pauseGame}
                 onReset={resetGame}
@@ -340,6 +354,9 @@ export default function Game() {
                 onThemeChange={setTheme}
                 onDifficultyChange={setDifficulty}
                 onModeChange={setGameMode}
+                onGridSizeChange={setGridSize}
+                onSpeedMultiplierChange={setSpeedMultiplier}
+                onEnableWallsChange={setEnableWalls}
               />
             </div>
           </div>

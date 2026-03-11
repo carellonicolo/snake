@@ -8,6 +8,9 @@ interface GameUIProps {
   difficulty: Difficulty;
   gameMode: GameMode;
   soundEnabled: boolean;
+  gridSize: number;
+  speedMultiplier: number;
+  enableWalls: boolean;
   onStart: () => void;
   onPause: () => void;
   onReset: () => void;
@@ -15,6 +18,9 @@ interface GameUIProps {
   onThemeChange: (theme: Theme) => void;
   onDifficultyChange: (difficulty: Difficulty) => void;
   onModeChange: (mode: GameMode) => void;
+  onGridSizeChange: (size: number) => void;
+  onSpeedMultiplierChange: (speed: number) => void;
+  onEnableWallsChange: (enabled: boolean) => void;
 }
 
 const THEME_LABELS: Record<Theme, string> = {
@@ -47,6 +53,9 @@ export const GameUI = forwardRef<HTMLDivElement, GameUIProps>(
     difficulty,
     gameMode,
     soundEnabled,
+    gridSize,
+    speedMultiplier,
+    enableWalls,
     onStart,
     onPause,
     onReset,
@@ -54,6 +63,9 @@ export const GameUI = forwardRef<HTMLDivElement, GameUIProps>(
     onThemeChange,
     onDifficultyChange,
     onModeChange,
+    onGridSizeChange,
+    onSpeedMultiplierChange,
+    onEnableWallsChange,
   }, ref) => {
     const formatTime = (seconds: number) => {
       const mins = Math.floor(seconds / 60);
@@ -114,7 +126,7 @@ export const GameUI = forwardRef<HTMLDivElement, GameUIProps>(
               <span>{state.isPaused ? 'RESUME' : 'PAUSE'}</span>
             </button>
           )}
-          
+
           <button
             onClick={onToggleSound}
             className="retro-btn !px-3"
@@ -134,11 +146,10 @@ export const GameUI = forwardRef<HTMLDivElement, GameUIProps>(
                   <button
                     key={t}
                     onClick={() => onThemeChange(t)}
-                    className={`flex-1 py-2 px-3 text-xs font-terminal rounded transition-all ${
-                      theme === t
+                    className={`flex-1 py-2 px-3 text-xs font-terminal rounded transition-all ${theme === t
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                    }`}
+                      }`}
                   >
                     {THEME_LABELS[t]}
                   </button>
@@ -153,11 +164,10 @@ export const GameUI = forwardRef<HTMLDivElement, GameUIProps>(
                   <button
                     key={d}
                     onClick={() => onDifficultyChange(d)}
-                    className={`flex-1 py-2 px-3 text-xs font-terminal rounded transition-all ${
-                      difficulty === d
+                    className={`flex-1 py-2 px-3 text-xs font-terminal rounded transition-all ${difficulty === d
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                    }`}
+                      }`}
                   >
                     {DIFFICULTY_LABELS[d]}
                   </button>
@@ -172,11 +182,10 @@ export const GameUI = forwardRef<HTMLDivElement, GameUIProps>(
                   <button
                     key={m}
                     onClick={() => onModeChange(m)}
-                    className={`flex-1 py-2 px-3 text-xs font-terminal rounded transition-all ${
-                      gameMode === m
+                    className={`flex-1 py-2 px-3 text-xs font-terminal rounded transition-all ${gameMode === m
                         ? 'bg-primary text-primary-foreground'
                         : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-center gap-1">
                       <span>{MODE_LABELS[m].icon}</span>
@@ -187,6 +196,59 @@ export const GameUI = forwardRef<HTMLDivElement, GameUIProps>(
                     </div>
                   </button>
                 ))}
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-border/50">
+              <label className="block text-xs font-pixel text-muted-foreground mb-2">SCACCHIERA E MURI</label>
+              <div className="flex gap-2 mb-2">
+                <button
+                  onClick={() => onGridSizeChange(15)}
+                  className={`flex-1 py-1 px-2 text-xs font-terminal rounded transition-all ${gridSize === 15 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                >
+                  Piccola (15x15)
+                </button>
+                <button
+                  onClick={() => onGridSizeChange(30)}
+                  className={`flex-1 py-1 px-2 text-xs font-terminal rounded transition-all ${gridSize === 30 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                >
+                  Normale (30x30)
+                </button>
+                <button
+                  onClick={() => onGridSizeChange(50)}
+                  className={`flex-1 py-1 px-2 text-xs font-terminal rounded transition-all ${gridSize === 50 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                >
+                  Grande (50x50)
+                </button>
+              </div>
+              <button
+                onClick={() => onEnableWallsChange(!enableWalls)}
+                className={`w-full py-2 px-3 text-xs font-terminal rounded transition-all flex items-center justify-center gap-2 ${enableWalls
+                    ? 'bg-destructive/20 text-destructive border border-destructive/50'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+              >
+                <span>🧱</span>
+                <span>{enableWalls ? 'Muri Aggiuntivi: ATTIVATI' : 'Muri Aggiuntivi: DISATTIVATI'}</span>
+              </button>
+            </div>
+
+            <div className="pt-2 border-t border-border/50">
+              <div className="flex justify-between text-xs font-pixel text-muted-foreground mb-2">
+                <label>MOLTIPLICATORE VELOCITÀ: {speedMultiplier.toFixed(1)}x</label>
+              </div>
+              <input
+                type="range"
+                min="0.5"
+                max="3.0"
+                step="0.1"
+                value={speedMultiplier}
+                onChange={(e) => onSpeedMultiplierChange(parseFloat(e.target.value))}
+                className="w-full accent-primary"
+              />
+              <div className="flex justify-between text-[10px] font-terminal text-muted-foreground mt-1">
+                <span>0.5x (Lento)</span>
+                <span>3.0x (Pazzo)</span>
               </div>
             </div>
           </div>

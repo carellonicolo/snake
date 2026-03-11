@@ -32,6 +32,9 @@ export interface GameState {
   activePowerUps: ActivePowerUp[];
   direction: Direction;
   score: number;
+  combo: number;
+  comboTimer: number;
+  walls: Position[];
   isPlaying: boolean;
   isPaused: boolean;
   isGameOver: boolean;
@@ -41,8 +44,8 @@ export interface GameState {
 
 export interface GameConfig {
   gridSize: number;
-  cellSize: number;
-  baseSpeed: number;
+  speedMultiplier: number;
+  enableWalls: boolean;
   difficulty: Difficulty;
   theme: Theme;
   mode: GameMode;
