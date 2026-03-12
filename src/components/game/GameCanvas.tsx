@@ -1,11 +1,13 @@
-import { forwardRef, useEffect, useRef, useState, useImperativeHandle } from 'react';
-import { GameState, Theme, THEME_COLORS, PowerUpType } from '@/types/game';
+import React, { forwardRef, useEffect, useRef, useState, useImperativeHandle } from 'react';
+import { GameState, GameTheme, THEME_PRESETS, PowerUpType } from '@/types/game';
+import { useParticles } from '@/hooks/useParticles';
 
 interface GameCanvasProps {
   state: GameState;
-  theme: Theme;
+  theme: GameTheme;
   gridSize: number;
   renderFraction: number;
+  particlesEnabled?: boolean;
 }
 
 const POWER_UP_SYMBOLS: Record<PowerUpType, string> = {
@@ -15,11 +17,13 @@ const POWER_UP_SYMBOLS: Record<PowerUpType, string> = {
 };
 
 export const GameCanvas = forwardRef<HTMLCanvasElement, GameCanvasProps>(
-  ({ state, theme, gridSize, renderFraction }, ref) => {
+  ({ state, theme, gridSize, renderFraction, particlesEnabled = true }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [dimensions, setDimensions] = useState({ width: 600, height: 600 });
-    const colors = THEME_COLORS[theme];
+    const colors = THEME_PRESETS[theme];
+    const { emitBurst, emitTrail, update: updateParticles, draw: drawParticles } = useParticles();
+    const prevScore = useRef(state.score);
 
     useImperativeHandle(ref, () => canvasRef.current!);
 
@@ -60,11 +64,11 @@ export const GameCanvas = forwardRef<HTMLCanvasElement, GameCanvasProps>(
       if (!ctx) return;
 
       // Clear canvas
-      ctx.fillStyle = colors.background;
+      ctx.fillStyle = `hsl(${colors.background})`;
       ctx.fillRect(0, 0, dimensions.width, dimensions.height);
 
       // Draw grid
-      ctx.strokeStyle = colors.grid;
+      ctx.strokeStyle = colors.grid ? `hsl(${colors.grid})` : `hsl(${colors.foreground} / 0.1)`;
       ctx.lineWidth = 0.5;
       for (let i = 0; i <= gridSize; i++) {
         ctx.beginPath();
@@ -87,9 +91,9 @@ export const GameCanvas = forwardRef<HTMLCanvasElement, GameCanvasProps>(
         const opacity = isHead ? 1 : Math.max(0.4, 1 - (progress * 0.6));
 
         ctx.globalAlpha = opacity;
-        ctx.fillStyle = isHead ? colors.snakeHead : colors.snake;
+        ctx.fillStyle = isHead ? `hsl(${colors.snakeHead})` : `hsl(${colors.snake})`;
 
-        if (theme === 'nokia') {
+        if (theme === 'retro') {
           // Nokia doesn't use opacity to retain the retro look
           ctx.globalAlpha = 1;
           ctx.fillRect(
@@ -98,7 +102,7 @@ export const GameCanvas = forwardRef<HTMLCanvasElement, GameCanvasProps>(
             actualCellSize - 2,
             actualCellSize - 2
           );
-        } else if (theme === 'arcade') {
+        } else if (theme === 'matrix' || theme === 'vaporwave') {
           const x = segment.x * actualCellSize + 1;
           const y = segment.y * actualCellSize + 1;
           // Slightly shrink tail segments for better trail effect
@@ -119,15 +123,15 @@ export const GameCanvas = forwardRef<HTMLCanvasElement, GameCanvasProps>(
           ctx.fill();
 
           if (isHead) {
-            ctx.shadowColor = colors.snakeHead;
+            ctx.shadowColor = `hsl(${colors.snakeHead})`;
             ctx.shadowBlur = 10;
             ctx.fill();
             ctx.shadowBlur = 0;
           }
         } else {
-          // Terminal
+          // Default styling for other themes
           const shrinkOffset = isHead ? 0 : (progress * 1.5);
-          ctx.shadowColor = colors.snake;
+          ctx.shadowColor = `hsl(${colors.snake})`;
           ctx.shadowBlur = isHead ? 8 : 4;
           ctx.fillRect(
             segment.x * actualCellSize + 2 + shrinkOffset,
@@ -144,8 +148,8 @@ export const GameCanvas = forwardRef<HTMLCanvasElement, GameCanvasProps>(
       const foodX = state.food.position.x * actualCellSize + actualCellSize / 2;
       const foodY = state.food.position.y * actualCellSize + actualCellSize / 2;
 
-      ctx.fillStyle = colors.food;
-      if (theme === 'nokia') {
+      ctx.fillStyle = `hsl(${colors.food})`;
+      if (theme === 'retro') {
         ctx.fillRect(
           state.food.position.x * actualCellSize + 3,
           state.food.position.y * actualCellSize + 3,
@@ -157,8 +161,8 @@ export const GameCanvas = forwardRef<HTMLCanvasElement, GameCanvasProps>(
         ctx.arc(foodX, foodY, actualCellSize / 2 - 3, 0, Math.PI * 2);
         ctx.fill();
 
-        if (theme === 'arcade') {
-          ctx.shadowColor = colors.food;
+        if (theme === 'matrix' || theme === 'vaporwave') {
+          ctx.shadowColor = `hsl(${colors.food})`;
           ctx.shadowBlur = 10;
           ctx.fill();
           ctx.shadowBlur = 0;
@@ -170,7 +174,7 @@ export const GameCanvas = forwardRef<HTMLCanvasElement, GameCanvasProps>(
         const puX = state.powerUp.position.x * actualCellSize + actualCellSize / 2;
         const puY = state.powerUp.position.y * actualCellSize + actualCellSize / 2;
 
-        ctx.fillStyle = colors.powerUp;
+        ctx.fillStyle = `hsl(${colors.accent})`;
         ctx.beginPath();
         ctx.arc(puX, puY, actualCellSize / 2 - 2, 0, Math.PI * 2);
         ctx.fill();
@@ -179,21 +183,44 @@ export const GameCanvas = forwardRef<HTMLCanvasElement, GameCanvasProps>(
         ctx.globalAlpha = pulse;
         ctx.beginPath();
         ctx.arc(puX, puY, actualCellSize / 2, 0, Math.PI * 2);
-        ctx.strokeStyle = colors.powerUp;
+        ctx.strokeStyle = `hsl(${colors.accent})`;
         ctx.lineWidth = 2;
         ctx.stroke();
         ctx.globalAlpha = 1;
 
-        ctx.fillStyle = colors.background;
+        ctx.fillStyle = `hsl(${colors.background})`;
         ctx.font = `bold ${actualCellSize / 2}px Arial`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(POWER_UP_SYMBOLS[state.powerUp.type], puX, puY);
       }
 
+      // Particles
+      if (particlesEnabled) {
+        if (state.score > prevScore.current) {
+          // Emitted an eating burst
+          // We approximate the previous head position for the burst
+          const x = state.snake[0].x * actualCellSize + actualCellSize / 2;
+          const y = state.snake[0].y * actualCellSize + actualCellSize / 2;
+          emitBurst(x, y, `hsl(${colors.accent || colors.food})`);
+          prevScore.current = state.score;
+        }
+
+        // Emit trail from tail
+        if (state.snake.length > 0 && !state.isPaused && !state.isGameOver) {
+          const tail = state.snake[state.snake.length - 1];
+          if (Math.random() > 0.6) {
+            emitTrail(tail.x * actualCellSize + actualCellSize / 2, tail.y * actualCellSize + actualCellSize / 2, `hsl(${colors.snake})`, 0.5);
+          }
+        }
+
+        updateParticles();
+        drawParticles(ctx);
+      }
+
       // Draw Walls
       if (state.walls && state.walls.length > 0) {
-        ctx.fillStyle = theme === 'arcade' ? '#888' : theme === 'nokia' ? '#0f380f' : '#222';
+        ctx.fillStyle = `hsl(${colors.foreground} / 0.5)`;
         state.walls.forEach(wall => {
           ctx.fillRect(
             wall.x * actualCellSize + 1,
@@ -202,18 +229,18 @@ export const GameCanvas = forwardRef<HTMLCanvasElement, GameCanvasProps>(
             actualCellSize - 2
           );
           // Optional: simple brick pattern
-          if (theme === 'arcade') {
-            ctx.fillStyle = '#666';
+          if (theme === 'matrix' || theme === 'vaporwave') {
+            ctx.fillStyle = `hsl(${colors.foreground} / 0.3)`;
             ctx.fillRect(wall.x * actualCellSize + 1, wall.y * actualCellSize + 1 + (actualCellSize / 2), actualCellSize - 2, 1);
             ctx.fillRect(wall.x * actualCellSize + 1 + (actualCellSize / 2), wall.y * actualCellSize + 1, 1, actualCellSize / 2);
-            ctx.fillStyle = '#888';
+            ctx.fillStyle = `hsl(${colors.foreground} / 0.5)`;
           }
         });
       }
 
       // Draw Combo Indicator if active
       if (state.combo > 1) {
-        ctx.fillStyle = theme === 'arcade' ? '#f5d300' : colors.text;
+        ctx.fillStyle = `hsl(${colors.accent})`;
         const fontSize = Math.max(16, dimensions.width * 0.05);
         ctx.font = `bold ${fontSize}px "Courier New", monospace`;
         ctx.textAlign = 'right';
@@ -239,14 +266,13 @@ export const GameCanvas = forwardRef<HTMLCanvasElement, GameCanvasProps>(
 
     const getCanvasClass = () => {
       switch (theme) {
-        case 'nokia':
-          return 'nokia-lcd';
-        case 'arcade':
-          return 'border-4 border-[#e94560]';
-        case 'terminal':
-          return 'crt-effect terminal-flicker border-2 border-[#003300]';
+        case 'retro':
+          return 'border-4 border-primary/50 shadow-[0_0_30px_rgba(0,255,0,0.2)]';
+        case 'vaporwave':
+        case 'matrix':
+          return 'crt-effect terminal-flicker border-2 border-primary/40 shadow-[0_0_50px_rgba(255,0,255,0.15)]';
         default:
-          return '';
+          return 'rounded-xl shadow-2xl border border-white/5';
       }
     };
 

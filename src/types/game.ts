@@ -1,6 +1,6 @@
 export type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
 export type Difficulty = 'easy' | 'medium' | 'hard';
-export type Theme = 'nokia' | 'arcade' | 'terminal';
+export type GameTheme = 'retro' | 'minimal' | 'minimal-dark' | 'futuristic' | 'ocean' | 'sunset' | 'candy' | 'sepia' | 'blood' | 'matrix' | 'frost' | 'vaporwave' | 'custom';
 export type GameMode = 'classic' | 'endless';
 export type PowerUpType = 'slowdown' | 'double_points' | 'invincibility';
 
@@ -43,56 +43,142 @@ export interface GameState {
 }
 
 export interface GameConfig {
+  theme: GameTheme;
+  mode: GameMode;
   gridSize: number;
   speedMultiplier: number;
   enableWalls: boolean;
-  difficulty: Difficulty;
-  theme: Theme;
-  mode: GameMode;
+  powerUpsEnabled: boolean;
+  soundEnabled: boolean;
+  musicEnabled: boolean;
+  particlesEnabled: boolean;
+  player1Nickname: string;
+  player1Color: string;
 }
 
 export interface ThemeColors {
   background: string;
+  foreground: string;
   snake: string;
   snakeHead: string;
   food: string;
-  powerUp: string;
-  grid: string;
-  text: string;
-  border: string;
+  accent: string;
+  glow?: string;
+  grid?: string;
 }
 
-export const THEME_COLORS: Record<Theme, ThemeColors> = {
-  nokia: {
-    background: '#9bbc0f',
-    snake: '#0f380f',
-    snakeHead: '#306230',
-    food: '#0f380f',
-    powerUp: '#8bac0f',
-    grid: '#8bac0f',
-    text: '#0f380f',
-    border: '#0f380f'
+export const THEME_PRESETS: Record<GameTheme, ThemeColors> = {
+  retro: {
+    background: '0 0% 5%',
+    foreground: '120 100% 50%',
+    snake: '120 100% 50%',
+    snakeHead: '60 100% 50%',
+    food: '0 100% 50%',
+    accent: '300 100% 50%',
+    glow: '120 100% 50%',
   },
-  arcade: {
-    background: '#1a1a2e',
-    snake: '#00ff41',
-    snakeHead: '#39ff14',
-    food: '#ff073a',
-    powerUp: '#f5d300',
-    grid: '#16213e',
-    text: '#eee',
-    border: '#e94560'
+  minimal: {
+    background: '0 0% 98%',
+    foreground: '0 0% 10%',
+    snake: '0 0% 30%',
+    snakeHead: '0 0% 10%',
+    food: '0 0% 50%',
+    accent: '0 0% 50%',
   },
-  terminal: {
-    background: '#0d0d0d',
-    snake: '#00ff00',
-    snakeHead: '#33ff33',
-    food: '#00ff00',
-    powerUp: '#00cc00',
-    grid: '#0a0a0a',
-    text: '#00ff00',
-    border: '#003300'
-  }
+  'minimal-dark': {
+    background: '0 0% 6%',
+    foreground: '0 0% 90%',
+    snake: '0 0% 70%',
+    snakeHead: '0 0% 90%',
+    food: '0 0% 50%',
+    accent: '0 0% 45%',
+  },
+  futuristic: {
+    background: '230 30% 8%',
+    foreground: '200 100% 60%',
+    snake: '180 100% 50%',
+    snakeHead: '200 100% 70%',
+    food: '320 100% 60%',
+    accent: '260 100% 70%',
+    glow: '200 100% 50%',
+  },
+  ocean: {
+    background: '210 60% 12%',
+    foreground: '185 80% 65%',
+    snake: '175 90% 55%',
+    snakeHead: '195 80% 70%',
+    food: '180 100% 80%',
+    accent: '200 90% 50%',
+    glow: '185 80% 50%',
+  },
+  sunset: {
+    background: '270 30% 12%',
+    foreground: '30 100% 65%',
+    snake: '20 100% 60%',
+    snakeHead: '45 100% 70%',
+    food: '280 70% 65%',
+    accent: '350 80% 60%',
+    glow: '30 100% 50%',
+  },
+  candy: {
+    background: '300 20% 95%',
+    foreground: '330 80% 55%',
+    snake: '330 90% 65%',
+    snakeHead: '280 70% 60%',
+    food: '190 80% 55%',
+    accent: '50 90% 60%',
+  },
+  sepia: {
+    background: '35 30% 15%',
+    foreground: '35 40% 70%',
+    snake: '35 50% 65%',
+    snakeHead: '40 50% 75%',
+    food: '25 35% 55%',
+    accent: '30 40% 50%',
+  },
+  blood: {
+    background: '0 0% 4%',
+    foreground: '0 85% 50%',
+    snake: '0 90% 55%',
+    snakeHead: '0 100% 60%',
+    food: '0 70% 40%',
+    accent: '0 80% 45%',
+    glow: '0 90% 40%',
+  },
+  matrix: {
+    background: '0 0% 2%',
+    foreground: '120 100% 45%',
+    snake: '120 100% 50%',
+    snakeHead: '120 100% 60%',
+    food: '120 80% 35%',
+    accent: '120 90% 40%',
+    glow: '120 100% 45%',
+  },
+  frost: {
+    background: '210 30% 95%',
+    foreground: '200 50% 40%',
+    snake: '200 60% 50%',
+    snakeHead: '195 70% 45%',
+    food: '210 40% 60%',
+    accent: '200 50% 70%',
+  },
+  vaporwave: {
+    background: '270 40% 10%',
+    foreground: '310 100% 70%',
+    snake: '180 100% 60%',
+    snakeHead: '50 100% 70%',
+    food: '310 100% 65%',
+    accent: '280 80% 60%',
+    glow: '310 100% 60%',
+  },
+  custom: {
+    background: '220 20% 10%',
+    foreground: '0 0% 95%',
+    snake: '210 100% 50%',
+    snakeHead: '0 0% 100%',
+    food: '0 80% 60%',
+    accent: '45 100% 50%',
+  },
 };
 
 export const DIFFICULTY_SETTINGS: Record<Difficulty, { speed: number; powerUpChance: number }> = {
