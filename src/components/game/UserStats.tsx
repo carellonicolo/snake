@@ -29,15 +29,24 @@ export function UserStats() {
         return;
       }
 
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('user_stats')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('id', user.id) // Try id first
         .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching stats:', error);
-      } else if (data) {
+      if (error || !data) {
+        // Fallback to user_id
+        const fallback = await supabase
+          .from('user_stats')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        data = fallback.data;
+        if (fallback.error) console.error('Error fetching stats:', fallback.error);
+      }
+
+      if (data) {
         setStats({
           ...data,
           games_by_difficulty: data.games_by_difficulty as Stats['games_by_difficulty'],

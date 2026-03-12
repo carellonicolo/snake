@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (email: string, password: string, username: string) => {
     const redirectUrl = `${window.location.origin}/`;
-    
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -50,10 +50,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (data.user) {
       const { error: profileError } = await supabase
         .from('profiles')
-        .insert({
+        .upsert({
+          id: data.user.id,
           user_id: data.user.id,
-          username
-        });
+          username,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' });
 
       if (profileError) return { error: profileError as unknown as Error };
     }

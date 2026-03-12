@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Trophy, Medal, Award } from 'lucide-react';
-import { Difficulty, Theme } from '@/types/game';
+import { Difficulty, GameTheme } from '@/types/game';
 
 interface LeaderboardEntry {
   id: string;
@@ -15,7 +15,7 @@ interface LeaderboardEntry {
 
 interface LeaderboardProps {
   filterDifficulty?: Difficulty;
-  filterTheme?: Theme;
+  filterTheme?: GameTheme;
   limit?: number;
 }
 
@@ -26,58 +26,94 @@ export function Leaderboard({ filterDifficulty, filterTheme, limit = 10 }: Leade
   useEffect(() => {
     const fetchLeaderboard = async () => {
       setLoading(true);
+      console.log('Fetching leaderboard data...');
 
-      // Get scores with joined profile username
-      let query = supabase
-        .from('game_scores')
-        .select(`
-          id, score, snake_length, difficulty, theme, created_at, user_id,
-          profiles (
-            username
-          )
-        `)
-        .order('score', { ascending: false })
-        .limit(limit);
+      try {
+        // Step 1: Try with join
+        let query = supabase
+          .from('game_scores')
+          .select(`
+            id, score, snake_length, difficulty, theme, created_at, user_id,
+            profiles (
+              username
+            )
+          `)
+          .order('score', { ascending: false })
+          .limit(limit);
 
-      if (filterDifficulty) {
-        query = query.eq('difficulty', filterDifficulty);
-      }
-      if (filterTheme) {
-        query = query.eq('theme', filterTheme);
-      }
+        if (filterDifficulty) query = query.eq('difficulty', filterDifficulty);
+        if (filterTheme) query = query.eq('theme', filterTheme);
 
-      const { data: scores, error } = await query;
+        const { data: scores, error } = await query;
 
-      if (error) {
-        console.error('Error fetching leaderboard:', error);
+        if (error) {
+          console.error('Leaderboard join fetch error:', error);
+
+          // Step 2: Fallback - Fetch scores without join if join failed
+          const { data: simpleScores, error: simpleError } = await supabase
+            .from('game_scores')
+            .select('*')
+            .order('score', { ascending: false })
+            .limit(limit);
+
+          if (simpleError) {
+            console.error('Leaderboard simple fetch error:', simpleError);
+            setLoading(false);
+            return;
+          }
+
+          if (!simpleScores || simpleScores.length === 0) {
+            setEntries([]);
+            setLoading(false);
+            return;
+          }
+
+          // Step 3: Try to fetch usernames separately
+          const userIds = [...new Set(simpleScores.map(s => s.user_id || s.id))];
+          // We fetch all profiles matching these IDs
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, user_id, username')
+            .in('user_id', userIds);
+
+          const profileMap = new Map();
+          profiles?.forEach(p => {
+            // Map by both user_id and id to be absolutely safe
+            if (p.user_id) profileMap.set(p.user_id, p.username);
+            if (p.id) profileMap.set(p.id, p.username);
+          });
+
+          const mappedEntries: LeaderboardEntry[] = simpleScores.map(score => ({
+            id: score.id,
+            score: score.score,
+            snake_length: score.snake_length,
+            difficulty: score.difficulty,
+            theme: score.theme,
+            created_at: score.created_at,
+            username: profileMap.get(score.user_id) || profileMap.get(score.id) || 'Anonimo',
+          }));
+
+          setEntries(mappedEntries);
+        } else if (scores) {
+          const entriesWithUsernames: LeaderboardEntry[] = scores.map(score => {
+            const profileData = Array.isArray(score.profiles) ? score.profiles[0] : score.profiles;
+            return {
+              id: score.id,
+              score: score.score,
+              snake_length: score.snake_length,
+              difficulty: score.difficulty,
+              theme: score.theme,
+              created_at: score.created_at,
+              username: profileData?.username || 'Anonimo',
+            };
+          });
+          setEntries(entriesWithUsernames);
+        }
+      } catch (err) {
+        console.error('Critical leaderboard error:', err);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      if (!scores || scores.length === 0) {
-        setEntries([]);
-        setLoading(false);
-        return;
-      }
-
-      // Map joined data to LeaderboardEntry format
-      const entriesWithUsernames: LeaderboardEntry[] = scores.map(score => {
-        // Handle potential array or object return type from Supabase join
-        const profileData = Array.isArray(score.profiles) ? score.profiles[0] : score.profiles;
-
-        return {
-          id: score.id,
-          score: score.score,
-          snake_length: score.snake_length,
-          difficulty: score.difficulty,
-          theme: score.theme,
-          created_at: score.created_at,
-          username: profileData?.username || 'Anonimo',
-        };
-      });
-
-      setEntries(entriesWithUsernames);
-      setLoading(false);
     };
 
     fetchLeaderboard();

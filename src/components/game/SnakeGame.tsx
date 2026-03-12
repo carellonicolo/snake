@@ -88,46 +88,90 @@ export const SnakeGame: React.FC<SnakeGameProps> = ({ config, onBackToMenu, onGa
         if (!user || !state.isGameOver || state.score === 0) return;
 
         try {
-            await supabase.from('game_scores').insert({
+            console.log('Saving score for user:', user.id);
+
+            // Step 1: Insert score. We assume game_scores has either user_id or id for the user.
+            // Based on types.ts it should have user_id.
+            const { error: scoreError } = await supabase.from('game_scores').insert({
                 user_id: user.id,
                 score: state.score,
                 snake_length: state.snake.length,
-                difficulty: 'medium', // Sticking to medium for DB compat for now
-                theme: 'arcade', // Using arcade for DB compat
+                difficulty: 'medium',
+                theme: 'arcade',
                 game_duration_seconds: state.gameTime,
                 powerups_collected: 0,
             });
 
-            let { data: currentStats } = await supabase
+            if (scoreError) {
+                console.error('Error inserting game score:', scoreError);
+                // Try with 'id' if 'user_id' failed (casting to any to avoid TS errors on suspected schema mismatch)
+                await (supabase.from('game_scores') as any).insert({
+                    id: user.id,
+                    score: state.score,
+                    snake_length: state.snake.length,
+                    difficulty: 'medium',
+                    theme: 'arcade',
+                    game_duration_seconds: state.gameTime,
+                    powerups_collected: 0,
+                });
+            }
+
+            // Step 2: Update user stats
+            let { data: currentStats, error: statsFetchError } = await supabase
                 .from('user_stats')
                 .select('*')
-                .eq('user_id', user.id)
+                .eq('id', user.id) // Try id first
                 .maybeSingle();
 
-            if (!currentStats) {
-                const { data: newStats } = await supabase
+            if (statsFetchError || !currentStats) {
+                const fallback = await supabase
                     .from('user_stats')
-                    .insert({ user_id: user.id })
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .maybeSingle();
+                currentStats = fallback.data;
+            }
+
+            if (!currentStats) {
+                console.log('No stats found, creating new entry...');
+                // Try both to be safe
+                const { data: newStats, error: createError } = await (supabase
+                    .from('user_stats') as any)
+                    .insert({ id: user.id, user_id: user.id })
                     .select()
-                    .single();
-                currentStats = newStats;
+                    .maybeSingle();
+
+                if (createError) {
+                    // Try without id if it failed
+                    const retryCreate = await supabase
+                        .from('user_stats')
+                        .insert({ user_id: user.id })
+                        .select()
+                        .maybeSingle();
+                    currentStats = retryCreate.data;
+                } else {
+                    currentStats = newStats;
+                }
             }
 
             if (currentStats) {
-                const gamesByDifficulty = currentStats.games_by_difficulty as Record<string, number>;
+                const gamesByDifficulty = (currentStats.games_by_difficulty as Record<string, number>) || { easy: 0, medium: 0, hard: 0 };
                 gamesByDifficulty['medium'] = (gamesByDifficulty['medium'] || 0) + 1;
+
+                const statsId = currentStats.id || currentStats.user_id;
+                const idColumn = currentStats.id ? 'id' : 'user_id';
 
                 await supabase
                     .from('user_stats')
                     .update({
-                        total_games: currentStats.total_games + 1,
-                        total_score: currentStats.total_score + state.score,
-                        best_score: Math.max(currentStats.best_score, state.score),
-                        max_snake_length: Math.max(currentStats.max_snake_length, state.snake.length),
-                        total_play_time_seconds: currentStats.total_play_time_seconds + state.gameTime,
+                        total_games: (currentStats.total_games || 0) + 1,
+                        total_score: (currentStats.total_score || 0) + state.score,
+                        best_score: Math.max(currentStats.best_score || 0, state.score),
+                        max_snake_length: Math.max(currentStats.max_snake_length || 0, state.snake.length),
+                        total_play_time_seconds: (currentStats.total_play_time_seconds || 0) + state.gameTime,
                         games_by_difficulty: gamesByDifficulty,
                     })
-                    .eq('user_id', user.id);
+                    .eq(idColumn, statsId);
             }
 
             toast({
@@ -140,7 +184,7 @@ export const SnakeGame: React.FC<SnakeGameProps> = ({ config, onBackToMenu, onGa
                 ),
             });
         } catch (error) {
-            console.error('Error saving score:', error);
+            console.error('Critical error in saveScore:', error);
         }
     }, [user, state.isGameOver, state.score, state.snake.length, state.gameTime, toast]);
 

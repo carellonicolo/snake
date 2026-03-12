@@ -28,6 +28,8 @@ import { SlitheringSnake } from './SlitheringSnake';
 interface MainMenuProps {
     onStartGame: (config: GameConfig) => void;
     onViewLeaderboard?: () => void;
+    isAuthenticated?: boolean;
+    onAuthRequired?: () => void;
 }
 
 const THEME_OPTIONS: { value: GameTheme; label: string; icon: string; description: string }[] = [
@@ -62,7 +64,7 @@ const COLOR_PRESETS = [
     '30 90% 50%',   // Orange
 ];
 
-export const MainMenu: React.FC<MainMenuProps> = ({ onStartGame, onViewLeaderboard }) => {
+export const MainMenu: React.FC<MainMenuProps> = ({ onStartGame, onViewLeaderboard, isAuthenticated, onAuthRequired }) => {
     const [showConfig, setShowConfig] = useState(false);
     const getDefaultConfig = (mode: GameMode): GameConfig => ({
         theme: 'retro',
@@ -94,6 +96,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStartGame, onViewLeaderboa
     };
 
     const handleStartGame = () => {
+        if (!isAuthenticated && onAuthRequired) {
+            onAuthRequired();
+            return;
+        }
         onStartGame(config);
     };
 
@@ -142,6 +148,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStartGame, onViewLeaderboa
                             size="lg"
                             className="h-20 justify-start gap-4 text-left hover:scale-[1.02] transition-transform bg-background/90 backdrop-blur-sm"
                             onClick={() => {
+                                if (!isAuthenticated && onAuthRequired) {
+                                    onAuthRequired();
+                                    return;
+                                }
                                 setConfig(getDefaultConfig(option.value));
                                 setShowConfig(true);
                             }}
