@@ -1,102 +1,137 @@
-<div align="center">
-  <img src="public/favicon.svg" alt="Snake Logo" width="120" />
+# Retro Snake Game
 
-  # 🐍 Retro Snake Game
+> Snake game retro con temi personalizzabili, power-up e classifica globale
 
-  **Un tuffo nel passato con tecnologie del futuro.**
-  
-  [![Vite](https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E)](https://vitejs.dev/)
-  [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
-  [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-  [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-  [![Supabase](https://img.shields.io/badge/Supabase-181818?style=for-the-badge&logo=supabase&logoColor=3ECF8E)](https://supabase.io/)
-  <br>
-  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-  [![Cloudflare Pages](https://img.shields.io/badge/Deploy-Cloudflare-F38020?style=flat-square&logo=cloudflare)](https://pages.cloudflare.com/)
+[![Licenza MIT](https://img.shields.io/badge/Licenza-MIT-blue.svg)](LICENSE)
+[![React](https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=white)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-5-646cff?logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3-06b6d4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Supabase](https://img.shields.io/badge/Supabase-3ecf8e?logo=supabase&logoColor=white)](https://supabase.com/)
+[![Vitest](https://img.shields.io/badge/Vitest-6e9f18?logo=vitest&logoColor=white)](https://vitest.dev/)
+[![GitHub stars](https://img.shields.io/github/stars/carellonicolo/snake?style=social)](https://github.com/carellonicolo/snake)
+[![GitHub issues](https://img.shields.io/github/issues/carellonicolo/snake)](https://github.com/carellonicolo/snake/issues)
 
-  *Gioca, personalizza le regole, e scala le classifiche globali nel più classico dei giochi arcade, ora ricostruito con un motore fluido e personalizzabile.*
+## Panoramica
 
-</div>
+Retro Snake Game e una rivisitazione moderna del classico Snake, realizzata con tecnologie web contemporanee e un'attenzione particolare all'estetica retro. L'applicazione offre un motore di gioco personalizzabile (fluidita, velocita, dimensione griglia), una collezione di temi grafici premium ispirati a dispositivi e stili iconici, un sistema di power-up e una classifica globale in tempo reale tramite Supabase.
 
-<hr/>
+Il gioco e pensato per chi vuole rivivere la nostalgia del Snake con un'esperienza moderna, fluida e personalizzabile.
 
-## ✨ Caratteristiche Principali
+## Funzionalita Principali
 
-- 🕹️ **Engine Fluido e Customizzabile**: Non è il solito Snake a "scatti". Supporta interpolazioni, velocità modulare, scacchiera da 15x15 fino a 50x50 e generazione procedurale di ostacoli.
-- 🎨 **Temi Retro Premium**: Grafica ispirata ai classici, con filtri CRT, Scanlines, Effetti Glow (Arcade) e il classico filtro a cristalli liquidi verde (Nokia LCD).
-- 💥 **"Juice" & Animazioni**: *Screen Shake*, effetti scia (*dynamic trail*), e combo timer dinamici per massimizzare i punti prima della scadenza.
-- 🛡️ **Power-Ups**: Arricchito con power-ups temporizzati come: Invincibilità, Doppi Punti e Rallentamento.
-- 🌍 **Classifica Globale Live**: Authentication robusta grazie a **Supabase** (compatibile con hosting in locale e in cloud). Tabella punteggi aggiornata in real-time.
+- **Motore personalizzabile** — Regolazione di fluidita, velocita iniziale e dimensione della griglia
+- **Temi retro premium** — CRT, Nokia LCD, Arcade Glow, Game Boy e altri stili iconici
+- **Power-up** — Bonus speciali durante la partita (velocita, punti, dimensione)
+- **Classifica globale** — Leaderboard in tempo reale tramite Supabase
+- **Effetti visivi** — Filtri CRT, glow, scanlines e altri effetti retro
+- **Controlli touch** — Supporto per dispositivi mobili con swipe
+- **Statistiche** — Tracciamento di punteggio, lunghezza e durata partita
+- **Responsive** — Adattabile a qualsiasi dimensione di schermo
+
+## Tech Stack
+
+| Tecnologia | Utilizzo |
+|:--|:--|
+| ![React](https://img.shields.io/badge/React_18-61dafb?logo=react&logoColor=white) | Framework UI |
+| ![TypeScript](https://img.shields.io/badge/TypeScript_5-3178c6?logo=typescript&logoColor=white) | Linguaggio tipizzato |
+| ![Vite](https://img.shields.io/badge/Vite_5-646cff?logo=vite&logoColor=white) | Build tool |
+| ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06b6d4?logo=tailwindcss&logoColor=white) | Styling |
+| ![Supabase](https://img.shields.io/badge/Supabase-3ecf8e?logo=supabase&logoColor=white) | Leaderboard e backend |
+| ![Vitest](https://img.shields.io/badge/Vitest-6e9f18?logo=vitest&logoColor=white) | Testing |
+
+## Requisiti
+
+- **Node.js** >= 18
+- **npm** >= 9 (oppure bun)
+- **Supabase** — Un progetto Supabase (opzionale, per la classifica globale)
+
+## Installazione
+
+```bash
+git clone https://github.com/carellonicolo/snake.git
+cd snake
+npm install
+npm run dev
+```
+
+L'applicazione sara disponibile su `http://localhost:8080`.
+
+## Utilizzo
+
+1. Seleziona il tema grafico preferito
+2. Personalizza le impostazioni del motore di gioco
+3. Gioca usando le frecce direzionali o WASD
+4. Su mobile, usa lo swipe per controllare il serpente
+5. Il punteggio viene registrato automaticamente nella classifica globale
+
+## Struttura del Progetto
+
+```
+snake/
+├── src/
+│   ├── components/     # Componenti React (campo, menu, leaderboard)
+│   ├── lib/            # Motore di gioco, temi, power-up
+│   ├── pages/          # Pagine dell'applicazione
+│   ├── test/           # Test con Vitest
+│   └── hooks/          # Custom hooks
+├── public/             # Asset statici
+├── index.html          # Entry point HTML
+└── vite.config.ts      # Configurazione Vite
+```
+
+## Deploy
+
+```bash
+npm run build
+```
+
+Deployabile su Cloudflare Pages, Netlify o Vercel. Per la classifica globale, configurare le variabili Supabase.
+
+## Test
+
+```bash
+npm run test          # Esegui i test una volta
+npm run test:watch    # Modalita watch
+```
+
+## Contribuire
+
+I contributi sono benvenuti! Consulta le [linee guida per contribuire](CONTRIBUTING.md) per maggiori dettagli.
+
+## Licenza
+
+Distribuito con licenza MIT. Vedi il file [LICENSE](LICENSE) per i dettagli completi.
+
+## Autore
+
+**Nicolo Carello**
+- GitHub: [@carellonicolo](https://github.com/carellonicolo)
+- Website: [nicolocarello.it](https://nicolocarello.it)
 
 ---
 
-## 🚀 Setup & Avvio Rapido
+<sub>Sviluppato con l'ausilio dell'intelligenza artificiale.</sub>
 
-Questo gioco utilizza Vite per il client e richiede un'istanza Supabase (Cloud o Locale via Docker) per funzionare appieno (autenticazione, statistiche, classifiche).
+## Progetti Correlati
 
-### Prerequisiti
-- [Node.js](https://nodejs.org/it/) (v16+)
-- npm / pnpm / yarn
-- Un'istanza [Supabase](https://supabase.com/) attiva o [CLI Locale installata](https://supabase.com/docs/guides/cli/getting-started)
+Questo progetto fa parte di una collezione di strumenti didattici e applicazioni open-source:
 
-### Installazione
-
-1. **Clona la Repository**
-   ```bash
-   git clone https://github.com/TuoUsername/snake.git
-   cd snake
-   ```
-
-2. **Installa le dipendenze**
-   ```bash
-   npm install
-   ```
-
-3. **Configura le Variabili d'Ambiente**
-   Rinomina il file `.env.example` in `.env` (se assente, crealo!) e compila i campi:
-   ```env
-   VITE_SUPABASE_URL=http://tuo-supabase-url-locale-o-cloud
-   VITE_SUPABASE_PUBLISHABLE_KEY=la-tua-anon-key-pubblica
-   ```
-
-4. **Avvia in Modalità Sviluppo**
-   ```bash
-   npm run dev
-   ```
-   L'app sarà visibile all'indirizzo [http://localhost:8080](http://localhost:8080) (o sulla porta indicata da Vite).
-
----
-
-## 🗄️ Struttura Database (Supabase)
-
-Il gioco si affida a 4 entità fondamentali sul DB SQL, progettate per essere facilmente condivisibili e idempotenti tra altre app del tuo network:
-
-1. `profiles`: Tabella centralizzata con ID Autocad (auth.users), username e data_creazione.
-2. `snake_preferences`: Set di prefenze game-specific (tema, difficoltà, suoni) uniche per il tool.
-3. `game_scores`: Il core dei log storici. Salva difficoltà, tema e score per i ranking globali.
-4. `user_stats`: Accumulo statistiche globali aggregate (tempo totale giocato, games by difficulty, record assoluto).
-
-Trovi la **SQL Migration File** pronta in `supabase/migrations/20260311160000_shared_profiles_snake_preferences.sql`.
-
----
-
-## 🤝 Contribuire
-
-Siamo sempre alla ricerca di contributi (risoluzione di bug, implementazione di nuove logiche ostacoli o temi grafici).  
-Sei pregato di consultare i documenti [CONTRIBUTING.md](CONTRIBUTING.md) e [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) per capire come iniziare.
-
-1. Fai il **Fork** del progetto!
-2. Crea il tuo **Feature Branch** (`git checkout -b feature/MioFeatureAggiunto`)
-3. Esegui il **Commit** delle tue modifiche (`git commit -m 'Aggiunto Fantastica Mela D'Oro'`)
-4. Fai il **Push** nel blocco (`git push origin feature/MioFeatureAggiunto`)
-5. Apri una **Pull Request**
-
----
-
-## 📄 Licenza
-
-Distribuito sotto la Licenza **MIT**. Guarda il file [LICENSE](LICENSE) per ulteriori delucidazioni. O in breve: sentiti libero di farci quello che preferisci ma mantenendo la firma d'autore. 
-
-<div align="center">
-  <i>Made with 💚 per i nostalgici del 1997</i>
-</div>
+| Progetto | Descrizione |
+|:--|:--|
+| [DFA Visual Editor](https://github.com/carellonicolo/AFS) | Editor visuale per automi DFA |
+| [Turing Machine](https://github.com/carellonicolo/Turing-Machine) | Simulatore di Macchina di Turing |
+| [Scheduler](https://github.com/carellonicolo/Scheduler) | Simulatore di scheduling CPU |
+| [Subnet Calculator](https://github.com/carellonicolo/Subnet) | Calcolatore subnet IPv4/IPv6 |
+| [Base Converter](https://github.com/carellonicolo/base-converter) | Suite di conversione multi-funzionale |
+| [Gioco del Lotto](https://github.com/carellonicolo/giocodellotto) | Simulatore Lotto e SuperEnalotto |
+| [MicroASM](https://github.com/carellonicolo/microasm) | Simulatore assembly |
+| [Flow Charts](https://github.com/carellonicolo/flow-charts) | Editor di diagrammi di flusso |
+| [Cypher](https://github.com/carellonicolo/cypher) | Toolkit di crittografia |
+| [Pong](https://github.com/carellonicolo/pongcarello) | Pong game |
+| [Calculator](https://github.com/carellonicolo/calculator-carello) | Calcolatrice scientifica |
+| [IPSC Score](https://github.com/carellonicolo/IPSC) | Calcolatore punteggi IPSC |
+| [Quiz](https://github.com/carellonicolo/quiz) | Piattaforma quiz scolastici |
+| [Carello Hub](https://github.com/carellonicolo/carello-hub) | Dashboard educativa |
+| [Prof Carello](https://github.com/carellonicolo/prof-carello) | Gestionale lezioni private |
+| [DOCSITE](https://github.com/carellonicolo/DOCSITE) | Piattaforma documentale |

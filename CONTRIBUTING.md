@@ -1,47 +1,80 @@
-# Contribuire a Snake Game
+# Contribuire al progetto
 
-Siamo felici che tu voglia contribuire a Snake Game! Sia che si tratti di un piccolo bug fix, di una nuova feature complessa, o di migliorare la documentazione, il tuo aiuto è prezioso.
+Grazie per il tuo interesse nel contribuire! Questo progetto fa parte di una collezione di strumenti open-source per la didattica e la divulgazione informatica. Ogni contributo, grande o piccolo, aiuta a migliorare l'esperienza di apprendimento per tutti.
 
-Questo documento ti guiderà attraverso il processo di contribuzione.
+## Come contribuire
 
-## 1. Segnalare Bug o Richiedere Feature 🐛💡
+### Segnalare un bug
 
-Utilizza i template appositi presenti nella sezione **Issues** del repository.
-- Per un **Bug**: Dettaglia il comportamento errato, come riprodurlo, il comportamento atteso e il tuo ambiente/dispositivo.
-- Per una **Feature**: Descrivi chiaramente cosa vorresti aggiungere e perché. Considera eventuali alternative.
+1. Verifica che il bug non sia gia stato segnalato tra le [Issues](../../issues) esistenti
+2. Apri una nuova Issue descrivendo:
+   - Il comportamento atteso
+   - Il comportamento effettivo
+   - I passi per riprodurre il problema
+   - Browser e sistema operativo utilizzati
+   - Eventuali screenshot
 
-## 2. Setup dell'Ambiente di Sviluppo 🛠️
+### Proporre una nuova funzionalita
 
-Se vuoi scrivere codice:
-1. Effettua il **Fork** di questo repository.
-2. Clona il fork sul tuo computer: `git clone https://github.com/[TuoUsername]/snake.git`
-3. Installa le dipendenze: `npm install`
-4. Copia le variabili d'ambiente: Crea un file `.env` copiando le variabili necessarie (Supabase URL e Anon Key).
-5. Lancia il dev server: `npm run dev`
+1. Apri una Issue con il tag `enhancement`
+2. Descrivi la funzionalita proposta, il caso d'uso e i benefici
+3. Attendi un riscontro prima di procedere con l'implementazione
 
-Assicurati che tutto funzioni prima di iniziare le modifiche.
+### Inviare una Pull Request
 
-## 3. Flusso di Lavoro Sviluppo 🔄
+1. Fai un **fork** del repository
+2. Crea un branch dal `main`:
+   ```bash
+   git checkout -b feature/nome-feature
+   ```
+3. Effettua le modifiche seguendo le convenzioni del progetto
+4. Testa le modifiche localmente
+5. Esegui il commit con messaggi chiari e descrittivi:
+   ```bash
+   git commit -m "feat: aggiungi descrizione breve"
+   ```
+6. Pusha il branch e apri una Pull Request
 
-1. Crea sempre un **nuovo branch** per la tua modifica dalla branch `main`: `git checkout -b feature/nome-della-tua-feature` o `bugfix/nome-del-bug`.
-2. Apporta le tue modifiche al codice.
-3. Se possibile, formatta il codice e risolvi gli avvisi di linting.
-4. Assicurati che l'applicazione continui a buildare regolarmente: esegui `npm run build`.
-5. Effettua i **Commit** usando messaggi chiari (es. `feat: aggiunta nuova dinamica combo` o `fix: crash del canvas su resize`). Segui idealmente gli standard di *Conventional Commits*.
-6. Effettua il **Push** del branch sul tuo fork: `git push origin feature/nome-della-tua-feature`.
+### Convenzioni per i commit
 
-## 4. Aprire una Pull Request (PR) 📤
+Questo progetto segue le [Conventional Commits](https://www.conventionalcommits.org/):
 
-1. Vai sul repository originale e apri una nuova **Pull Request**.
-2. Riempi il *Pull Request Template* fornito, spuntando i checklist completati.
-3. Sii chiaro su *cosa* è stato modificato e *come* è stato testato.
-4. Resta in attesa della review e di eventuali richieste di modifica dai maintainers.
+| Prefisso   | Uso                                    |
+|------------|----------------------------------------|
+| `feat:`    | Nuova funzionalita                     |
+| `fix:`     | Correzione di un bug                   |
+| `docs:`    | Modifiche alla documentazione          |
+| `style:`   | Formattazione, senza cambi di logica   |
+| `refactor:`| Refactoring del codice                 |
+| `test:`    | Aggiunta o modifica di test            |
+| `chore:`   | Manutenzione, dipendenze, build        |
 
-## 5. Standard di Sviluppo & Tecnologie in Uso 🧑‍💻
+## Ambiente di sviluppo
 
-- **Framework:** React + Vite
-- **Linguaggio:** TypeScript (Tipizzazione obbligatoria, evita l'`any` laddove possibile)
-- **Styling:** Tailwind CSS + shadcn/ui. Usa le classi utility invece dei file CSS separati se non è strettamente necessario.
-- **Backend/DB:** Supabase (Auth, Database PostreSQL, RLS). Se la tua PR include variazioni ai layer DB, devi proporre i file migration SQL corrispondenti.
+```bash
+# Clona il repository
+git clone <url-del-repo>
+cd <nome-progetto>
 
-Grazie per fare la tua parte nel migliorare Snake Game! 🐍
+# Installa le dipendenze
+npm install
+
+# Avvia il server di sviluppo
+npm run dev
+```
+
+## Linee guida
+
+- Scrivi codice pulito e leggibile
+- Mantieni la compatibilita con i browser moderni
+- Rispetta la struttura e le convenzioni esistenti del progetto
+- Documenta le modifiche significative
+- Segui il [Codice di Condotta](CODE_OF_CONDUCT.md)
+
+## Domande?
+
+Se hai dubbi o hai bisogno di aiuto, apri una Issue con il tag `question` o contatta il maintainer attraverso il suo [profilo GitHub](https://github.com/carellonicolo).
+
+---
+
+Grazie per rendere questo progetto migliore!

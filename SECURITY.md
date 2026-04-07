@@ -1,21 +1,37 @@
-# Security Policy
+# Policy di Sicurezza
 
-## Versioni Supportate
+## Segnalazione di vulnerabilita
 
-Il supporto e le patch di sicurezza sono forniti principalmente all'ultima versione stabile del gioco. Qualsiasi grave problema architetturale sarà fixato sulla branch `main` il prima possibile.
+Se scopri una vulnerabilita di sicurezza in questo progetto, ti chiediamo di segnalarla in modo responsabile.
 
-## Segnalare una Vulnerabilità 🚨
+**Non aprire una Issue pubblica per vulnerabilita di sicurezza.**
 
-La sicurezza è un fattore critico. Sappiamo che la repository include codice che gestisce Access Tokens, Auth e connessioni a Supabase in ambiente pubblico. Se scopri o sospetti una vulnerabilità di sicurezza all'interno dell'app (es. bypass dell'Auth, leak di credenziali, bypass RLS sulle tabelle del ranking):
+Invece, contatta il maintainer del progetto tramite il suo [profilo GitHub](https://github.com/carellonicolo) o invia una segnalazione privata attraverso la funzionalita [Security Advisories](../../security/advisories) del repository.
 
-1. **NON aprite un'Issue pubblica**! Creare un'issue pubblica potrebbe mettere a rischio l'applicazione.
-2. Contattare privatamente lo sviluppatore/i maintainer del progetto (es. via mail se indicata, o sui canali privati, o usando i task di Vulnerability di GitHub se la repo ha gli avvisi privati abilitati per i Security Advisory).
+## Cosa includere nella segnalazione
 
-Sii chiaro nel fornire:
-- Tipo di problematica rilevata (es: RLS bypass, XSS payload user-side).
-- Passi dettagliati per riprodurla.
-- Qualsiasi log/screenshot utile che ne provi l'efficacia, prestando attenzione a camuffare dati critici o utenti altrui.
+- Descrizione dettagliata della vulnerabilita
+- Passi per riprodurre il problema
+- Potenziale impatto della vulnerabilita
+- Eventuali suggerimenti per la risoluzione
 
-Tutti i report inerenti la sicurezza avranno **priorità massima** e cercheremo di convalidarli e patcharli nel minor tempo tecnico possibile.
+## Tempi di risposta
 
-Grazie per mantenere Snake Game un ambiente digitale sicuro!
+- **Conferma di ricezione**: entro 48 ore
+- **Valutazione iniziale**: entro 7 giorni
+- **Rilascio di un fix**: secondo la gravita del problema
+
+## Ambito
+
+Questa policy si applica al codice sorgente ospitato in questo repository e alle eventuali istanze di deploy mantenute dal maintainer.
+
+## Buone pratiche
+
+Questo progetto adotta le seguenti pratiche di sicurezza:
+
+- Dipendenze aggiornate regolarmente
+- Audit periodici con `npm audit`
+- Nessun dato sensibile nel repository
+- Headers di sicurezza per i deploy web (CSP, X-Frame-Options, etc.)
+
+Grazie per aiutarci a mantenere questo progetto sicuro per tutti.

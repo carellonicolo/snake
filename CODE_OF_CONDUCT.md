@@ -1,34 +1,37 @@
-# Codice di Condotta per i Contribuenti
+# Codice di Condotta
 
 ## Il nostro impegno
 
-Noi, nel ruolo di membri, contributori e coordinatori ci impegniamo a fare in modo che la partecipazione nel nostro progetto e nella nostra comunità sia un’esperienza libera da molestie per chiunque, indipendentemente da età, corporatura, invalidità visibile o invisibile, etnia, caratteristiche sessuali, identità e orientamento di genere, livello di esperienza, nazionalità, aspetto fisico, razza, espressione religiosa o identità o orientamento sessuale.
-
-Ci impegniamo di agire in modi che contribuiscano in maniera positiva, all'inclusione, e al benessere della nostra comunità.
+Nell'interesse di promuovere un ambiente aperto e accogliente, noi contributori e maintainer ci impegniamo a rendere la partecipazione al progetto e alla community un'esperienza libera da molestie per tutti, indipendentemente da eta, corporatura, disabilita, etnia, caratteristiche sessuali, identita ed espressione di genere, livello di esperienza, istruzione, stato socio-economico, nazionalita, aspetto personale, razza, religione o identita e orientamento sessuale.
 
 ## I nostri standard
 
-Esempi di comportamenti che contribuiscono a creare un ambiente positivo nella nostra comunità includono:
+Esempi di comportamento che contribuiscono a creare un ambiente positivo:
 
-* Dimostrare empatia e gentilezza verso gli altri
-* Essere rispettosi di opinioni, abilità, ed esperienze differenti
-* Accettare costruttivamente le critiche altrui
-* Prendersi la responsabilità delle proprie azioni ed esserne consapevoli per quanto riguarda possibili impatti sugli altri
-* Assumersi la responsabilità dei propri errori, scusandosi con le persone colpite e cercando di far tesoro dell'esperienza acquisita
-* Concentrarsi su ciò che è meglio non solo per se stessi, ma per la comunità intera
+- Usare un linguaggio accogliente e inclusivo
+- Essere rispettosi di punti di vista ed esperienze differenti
+- Accettare con grazia le critiche costruttive
+- Concentrarsi su cio che e meglio per la community
+- Mostrare empatia nei confronti degli altri membri della community
 
-Esempi di comportamenti inaccettabili includono:
+Esempi di comportamento inaccettabile:
 
-* L’utilizzo di un linguaggio o immaginario esplicito o sessuale, e le attenzioni o le provocazioni sessuali di qualsiasi tipo
-* Interventi lesivi o sprezzanti (cd. _trolling_), insulti o commenti dispregiativi, e attacchi personali o politici
-* Molestie in forma pubblica o privata
-* Scambiare informazioni private di qualcuno, come per esempio l’indirizzo fisico o la mail, senza il loro tacito permesso
-* Qualsiasi altra condotta che possa essere ragionevolmente considerata inappropriata per un ambiente professionale
+- L'uso di linguaggio o immagini sessualizzate e attenzioni o avance sessuali indesiderate
+- Trolling, commenti offensivi/denigratori e attacchi personali o politici
+- Molestie pubbliche o private
+- Pubblicare informazioni private di altri senza esplicito consenso
+- Altre condotte che potrebbero ragionevolmente essere considerate inappropriate in un contesto professionale
 
-## Responsabilità sul Codice ed Esecuzione Lavori
+## Le nostre responsabilita
 
-I responsabili del progetto o le persone incaricate da loro hanno la responsabilità di porre in essere norme ineccepibili, sia in termini di attuazione sia eticamente.
+I maintainer del progetto sono responsabili di chiarire gli standard di comportamento accettabile e sono tenuti ad adottare azioni correttive appropriate e giuste in risposta a qualsiasi caso di comportamento inaccettabile.
 
-I coordinatori hanno la facoltà di correggere, vietare, escludere, o censurare qualsiasi commento o commit al codice non in regola col nostro statuto, compreso il mancato rispetto della privacy e delle credenziali segrete o private (Leak/Data breach accidentali).
+I maintainer del progetto hanno il diritto e la responsabilita di rimuovere, modificare o rifiutare commenti, commit, codice, modifiche al wiki, issue e altri contributi non allineati a questo Codice di Condotta, o di bannare temporaneamente o permanentemente qualsiasi contributore per comportamenti ritenuti inappropriati, minacciosi, offensivi o dannosi.
 
-Tutti coloro che denuncino episodi di abusi, molestie o altri comportamenti inaccettabili in buona fede dovranno essere rigorosamente tutelati e le loro identità nascoste.
+## Applicazione
+
+Casi di comportamento abusivo, molesto o altrimenti inaccettabile possono essere segnalati contattando il maintainer del progetto tramite il suo [profilo GitHub](https://github.com/carellonicolo). Tutti i reclami saranno esaminati e investigati e risulteranno in una risposta ritenuta necessaria e appropriata alle circostanze.
+
+## Attribuzione
+
+Questo Codice di Condotta e adattato dal [Contributor Covenant](https://www.contributor-covenant.org), versione 2.1.
